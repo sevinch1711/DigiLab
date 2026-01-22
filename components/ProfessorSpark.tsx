@@ -24,7 +24,7 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
     setIsThinking(true);
     try {
       // Fix: Initialize GoogleGenAI directly with process.env.API_KEY as per guidelines
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI(import.meta.env.VITE_GEMINI_API_KEY);
       const prompt = `You are Professor Spark, a whimsical and friendly science wizard helping children in Uzbekistan. 
       The language you must use is: ${lang === 'uz' ? 'Uzbek (lotin script)' : lang === 'en' ? 'English' : 'Russian'}.
       Current Lab: ${subject}. 
