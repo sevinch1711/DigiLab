@@ -31,8 +31,15 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   const handleSend = async () => {
     if (!input.trim() || isThinking) return;
     const userMsg = input.trim();
-    const cacheKey = `${subject}-${lang}-${userMsg.toLowerCase()}`;
+    const apiKey = process.env.API_KEY || (process.env as any).VITE_GEMINI_API_KEY;
     
+    if (!apiKey) {
+      setMessages(prev => [...prev, { role: 'user', text: userMsg }, { role: 'model', text: "API kaliti (API_KEY) o'rnatilmagan! 🔑" }]);
+      setInput('');
+      return;
+    }
+
+    const cacheKey = `${subject}-${lang}-${userMsg.toLowerCase()}`;
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     
@@ -43,12 +50,12 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
 
     setIsThinking(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const promptText = `Friendly mentor Prof. Spark. Brief answer for a kid about ${subject} in ${lang}.`;
+      const ai = new GoogleGenAI({ apiKey });
+      const promptText = `Friendly mentor Prof. Spark. Brief answer for a kid about ${subject} in ${lang}. User asks: ${userMsg}`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-flash-latest',
-        contents: { parts: [{ text: promptText + "\nUser asks: " + userMsg }] },
+        contents: { parts: [{ text: promptText }] },
       });
 
       const botResponse = response.text || "Tushunmadim, qaytadan yozing.";
@@ -56,7 +63,9 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
       setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
     } catch (err: any) {
       console.error("Chat Error:", err);
-      setMessages(prev => [...prev, { role: 'model', text: "Hozir limitdaman. Bir ozdan so'ng savol bering! ⏳" }]);
+      let errorText = "Hozir limitdaman. Bir ozdan so'ng savol bering! ⏳";
+      if (err.message?.includes('API key')) errorText = "API kalitingizda xatolik bor! 🔑";
+      setMessages(prev => [...prev, { role: 'model', text: errorText }]);
     } finally {
       setIsThinking(false);
     }

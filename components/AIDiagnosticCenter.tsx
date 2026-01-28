@@ -30,7 +30,7 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       img.src = base64;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 700; // Reduce size for faster free-tier processing
+        const MAX_WIDTH = 700;
         let width = img.width;
         let height = img.height;
         if (width > MAX_WIDTH) {
@@ -61,18 +61,24 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
 
   const analyzeImage = async () => {
     if (!image) return;
+    const apiKey = process.env.API_KEY || (process.env as any).VITE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      setReport({ error: "Vercel'da API_KEY topilmadi! 🔑" });
+      return;
+    }
 
     setIsAnalyzing(true);
     setReport(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const promptText = `Analyze this ${subject} screenshot for a young student. 
       Return ONLY a JSON object: {"observation": "...", "scientific_secret": "...", "hint": "...", "mission": "...", "irt_score": -3 to 3}. 
       Language: ${lang}. Be very encouraging.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest', // Optimized for Free Tier
+        model: 'gemini-flash-latest',
         contents: {
           parts: [
             { text: promptText },
@@ -82,12 +88,9 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       });
 
       const text = response.text || "{}";
-      // Handle cases where AI wraps JSON in code blocks
       const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsedReport = JSON.parse(cleanJson);
       
-      if (!parsedReport.observation) throw new Error("Invalid AI response");
-
       setReport(parsedReport);
       localStorage.setItem(`diag_cache_${subject}_${lang}`, JSON.stringify(parsedReport));
 
@@ -96,8 +99,9 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       }
     } catch (err: any) {
       console.error("AI Analysis Error:", err);
-      let errorMsg = "Ulanishda xatolik. 🌐";
-      if (err.message?.includes('429')) errorMsg = "Free Tier limiti tugadi. 1 daqiqa kuting! ☕";
+      let errorMsg = "Tizim ulanishda xatolik. 🌐";
+      if (err.message?.includes('429')) errorMsg = "Limit tugadi. 1 daqiqa kuting! ⏳";
+      if (err.message?.includes('API key')) errorMsg = "API kaliti noto'g'ri! 🔑";
       setReport({ error: errorMsg });
     } finally {
       setIsAnalyzing(false);
@@ -145,6 +149,7 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
                <div className="p-10 bg-rose-500/10 border-2 border-rose-500/20 rounded-[48px] text-rose-200 font-bold text-center flex flex-col items-center gap-4">
                   <span className="text-5xl">⚠️</span>
                   {report.error}
+                  <p className="text-[10px] opacity-60">Vercel Dashboard > Settings > Environment Variables > API_KEY</p>
                   <button onClick={() => analyzeImage()} className="text-[10px] uppercase tracking-widest text-white bg-rose-500 px-4 py-2 rounded-full mt-2">Qayta urinish</button>
                </div>
             ) : (
