@@ -12,14 +12,12 @@ interface ScienceChatProps {
 interface Message {
   role: 'user' | 'model';
   text: string;
-  isCached?: boolean;
 }
 
 const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   const t = translations[lang] as any;
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(`chat_history_${subject}_${lang}`);
-    // Explicitly define role as const to avoid type inference issues from JSON.parse or t variable
     return saved ? JSON.parse(saved) : [{ role: 'model' as const, text: t.placeholder_spark }];
   });
   const [input, setInput] = useState('');
@@ -27,7 +25,6 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Xabarlarni saqlash
   useEffect(() => {
     localStorage.setItem(`chat_history_${subject}_${lang}`, JSON.stringify(messages));
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -38,29 +35,26 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
     const userMsg = input.trim();
     
     setInput('');
-    // Explicitly type newMessages array to ensure literal types are preserved
     const newMessages: Message[] = [...messages, { role: 'user' as const, text: userMsg }];
     setMessages(newMessages);
 
     setIsThinking(true);
     try {
-      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const promptText = `Friendly mentor Prof. Spark. Brief answer for a kid about ${subject} in ${lang}. User asks: ${userMsg}`;
+      // Tejamkor model RPM limitlari kengroq
+      const promptText = `Roleplay as Professor Spark, a magical and encouraging science mentor. Give a very brief, inspiring answer for a young student about ${subject} in ${lang}. User says: ${userMsg}`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.5-flash-lite-latest',
         contents: promptText,
       });
 
-      const botResponse = response.text || (lang === 'uz' ? "Kechirasiz, javob topolmadim." : "Sorry, no answer.");
-      // Use as const for the role literal to match Message interface exactly
+      const botResponse = response.text || (lang === 'uz' ? "Laboratoriya aloqasi uzildi." : "Lab connection lost.");
       setMessages(prev => [...prev, { role: 'model' as const, text: botResponse }]);
     } catch (err: any) {
       console.error("Chat Error:", err);
       let errorText = t.ai_error_general;
       if (err.message?.includes('429')) errorText = t.ai_error_rate_limit;
-      // Use as const for the role literal
       setMessages(prev => [...prev, { role: 'model' as const, text: errorText }]);
     } finally {
       setIsThinking(false);
@@ -68,7 +62,6 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   };
 
   const clearChat = () => {
-    // Fix: Explicitly type reset array and use as const for the role literal to resolve TypeScript error on line 67
     const reset: Message[] = [{ role: 'model' as const, text: t.placeholder_spark }];
     setMessages(reset);
     localStorage.removeItem(`chat_history_${subject}_${lang}`);

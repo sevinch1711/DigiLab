@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Subject, UserStats, Badge, Language, SubjectStats } from './types';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard'; // Yo'lni aniqlashtirdik
+import Dashboard from './Dashboard';
 import Leaderboard from './Leaderboard';
 import AboutPage from './components/AboutPage';
+import GuidePage from './components/GuidePage';
 import BiologyLab from './labs/BiologyLab';
 import ChemistryLab from './labs/ChemistryLab';
 import PhysicsLab from './labs/PhysicsLab';
@@ -31,7 +32,8 @@ const initialStats: UserStats = {
     [Subject.INFORMATICS]: { ...defaultSubjectStats },
     [Subject.HOME]: { ...defaultSubjectStats },
     [Subject.LEADERBOARD]: { ...defaultSubjectStats },
-    [Subject.ABOUT]: { ...defaultSubjectStats }
+    [Subject.ABOUT]: { ...defaultSubjectStats },
+    [Subject.GUIDE]: { ...defaultSubjectStats }
   },
   isRegistered: false,
   userName: ''
@@ -62,7 +64,7 @@ const App: React.FC = () => {
     });
     
     if (!stats.isRegistered) {
-      setShowRegistration(true);
+      setTimeout(() => setShowRegistration(true), 1500);
     }
   };
 
@@ -96,6 +98,10 @@ const App: React.FC = () => {
         }
       }
     }));
+    
+    if (!stats.isRegistered) {
+      setShowRegistration(true);
+    }
   };
 
   const addBadge = (badge: Badge) => {
@@ -121,15 +127,6 @@ const App: React.FC = () => {
     setShowRegistration(false);
   };
 
-  const handleRestore = () => {
-    if (window.confirm(t.restore_confirm)) {
-      localStorage.removeItem('digilab_stats');
-      setStats(initialStats);
-      setActiveTab(Subject.HOME);
-      setActiveExperimentId(null);
-    }
-  };
-
   const handleExperimentSelect = (subject: Subject, expId: string) => {
     setActiveTab(subject);
     setActiveExperimentId(expId);
@@ -148,15 +145,19 @@ const App: React.FC = () => {
       return <AboutPage lang={lang} />;
     }
 
+    if (activeTab === Subject.GUIDE) {
+      return <GuidePage lang={lang} />;
+    }
+
     switch (activeTab) {
       case Subject.BIOLOGY:
-        return <BiologyLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.BIOLOGY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.BIOLOGY, irt)} />;
+        return <BiologyLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(100); updateSubjectMastery(Subject.BIOLOGY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.BIOLOGY, irt)} />;
       case Subject.CHEMISTRY:
-        return <ChemistryLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.CHEMISTRY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.CHEMISTRY, irt)} />;
+        return <ChemistryLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(100); updateSubjectMastery(Subject.CHEMISTRY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.CHEMISTRY, irt)} />;
       case Subject.PHYSICS:
-        return <PhysicsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.PHYSICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.PHYSICS, irt)} />;
+        return <PhysicsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(100); updateSubjectMastery(Subject.PHYSICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.PHYSICS, irt)} />;
       case Subject.INFORMATICS:
-        return <InformaticsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.INFORMATICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.INFORMATICS, irt)} />;
+        return <InformaticsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(100); updateSubjectMastery(Subject.INFORMATICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.INFORMATICS, irt)} />;
       default:
         return <Dashboard onSelectLab={setActiveTab} onSelectExperiment={handleExperimentSelect} stats={stats} lang={lang} />;
     }
@@ -175,25 +176,21 @@ const App: React.FC = () => {
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-8 relative scrollbar-none">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
-          <div>
+          <div className="flex flex-col gap-1">
             <h1 className="text-4xl font-black text-slate-900 font-whimsical tracking-tight">
               {activeTab === Subject.HOME ? t.welcome : 
                activeTab === Subject.LEADERBOARD ? t.leaderboard_title : 
                activeTab === Subject.ABOUT ? t.about : 
+               activeTab === Subject.GUIDE ? (t as any).guide_title : 
                (t as any)[activeTab.toLowerCase()]}
             </h1>
-            <p className="text-slate-400 font-bold opacity-80">{t.explore}</p>
+            <div className="flex items-center gap-2">
+               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+               <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Tizim holati: Onlayn</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleRestore}
-              title={t.restore_btn}
-              className="w-12 h-12 flex items-center justify-center bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95"
-            >
-              🔄
-            </button>
-
             <div className="flex bg-white/60 backdrop-blur-md rounded-2xl p-1 shadow-sm border border-white/40">
               {(['uz', 'en', 'ru'] as Language[]).map(l => (
                 <button

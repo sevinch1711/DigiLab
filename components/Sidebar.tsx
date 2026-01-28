@@ -15,6 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, lang, level,
   const t = translations[lang];
   const menuItems = [
     { name: Subject.HOME, label: t.home, icon: '🏠' },
+    { name: Subject.GUIDE, label: (t as any).guide, icon: '📘' },
     { name: Subject.LEADERBOARD, label: t.leaderboard_title, icon: '🏆' },
     { name: Subject.BIOLOGY, label: t.biology, icon: '🌱' },
     { name: Subject.CHEMISTRY, label: t.chemistry, icon: '🧪' },

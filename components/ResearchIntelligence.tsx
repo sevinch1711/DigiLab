@@ -30,11 +30,9 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
   const generateScientificReport = async () => {
     setIsGenerating(true);
     try {
-      // Re-initialize for each request to ensure valid environment access
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const promptText = `Profile: ${stats.userName}, XP: ${stats.points}. Write a 2-sentence encouraging academic summary in ${lang}.`;
+      const promptText = `Profile: ${stats.userName}, XP: ${stats.points}. Write a 2-sentence encouraging academic summary in ${lang} as a wise professor. Do not mention AI or bots.`;
 
-      // Use gemini-3-flash-preview for academic summarization tasks
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptText,
@@ -45,7 +43,7 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
       localStorage.setItem(`scientific_report_${stats.points}_${lang}`, result);
     } catch (err: any) {
       console.error(err);
-      setAiReport("Hisobot limiti tugadi. Biroz kuting. ⏳");
+      setAiReport(t.ai_error_rate_limit);
     } finally {
       setIsGenerating(false);
     }
@@ -68,7 +66,7 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
           </div>
         ) : (
           <p className="text-slate-500 font-bold leading-relaxed max-w-sm">
-            Tizim kashfiyotlar xaritangizni tahlil qilmoqda. Gemini-3-flash orqali optimallashtirilgan.
+            Professor Spark sizning kashfiyotlar xaritangizni tahlil qilmoqda. Bilimlaringiz doirasini ko'rish uchun hisobotni bosing.
           </p>
         )}
         

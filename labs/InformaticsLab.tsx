@@ -1,257 +1,323 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Badge, Language, Subject, QuestionPool } from '../types';
 import { translations } from '../translations';
 import CatAssessment from '../components/CatAssessment';
 import AIDiagnosticCenter from '../components/AIDiagnosticCenter';
 
-// --- Informatics Components ---
+// --- Shared Helper: Logic Terminal Component ---
+const LogicTerminal: React.FC<{ logs: string[] }> = ({ logs }) => (
+  <div className="w-full mt-6 bg-slate-900 rounded-3xl p-5 font-mono text-[11px] text-emerald-400 shadow-2xl border border-slate-800 max-h-48 overflow-y-auto scrollbar-none">
+    <div className="flex items-center gap-2 mb-3 border-b border-slate-800 pb-2 sticky top-0 bg-slate-900 z-10">
+      <div className="flex gap-1.5">
+        <span className="w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+        <span className="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+      </div>
+      <span className="ml-2 text-slate-500 uppercase tracking-[0.2em] font-black">Backend Logic Terminal</span>
+    </div>
+    {logs.length === 0 ? (
+      <div className="text-slate-600 italic">Tizim tayyor... Kuting...</div>
+    ) : (
+      logs.map((log, i) => (
+        <div key={i} className="mb-1 animate-in fade-in slide-in-from-left-2 duration-300">
+          <span className="text-slate-600 mr-2">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
+          <span className="text-indigo-400 font-black">PROCESS:</span> {log}
+        </div>
+      ))
+    )}
+  </div>
+);
 
+// --- 1. Sorting Visualizer ---
 const SortingVisualizer: React.FC = () => {
-  const initialArray = [40, 10, 30, 20, 50];
-  const [array, setArray] = useState(initialArray);
-  const sort = () => setArray([...array].sort((a, b) => a - b));
-  const shuffle = () => setArray([...array].sort(() => Math.random() - 0.5));
-  const restore = () => setArray(initialArray);
-  
-  return (
-    <div className="bg-white p-8 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center animate-in fade-in zoom-in duration-500">
-      <div className="flex items-end gap-3 h-48 mb-8">
-        {array.map((v, i) => (
-          <div 
-            key={i} 
-            className="bg-gradient-to-t from-indigo-500 to-sky-400 rounded-t-2xl transition-all duration-700 shadow-lg" 
-            style={{ height: `${v * 3}px`, width: '40px' }}
-          ></div>
-        ))}
-      </div>
-      <div className="flex gap-4">
-        <button onClick={restore} className="px-6 py-3 bg-rose-50 text-rose-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all active:scale-95" title="Restore Default">🔄</button>
-        <button onClick={shuffle} className="px-8 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all">Shuffle</button>
-        <button onClick={sort} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-700 transition-all active:scale-95">Sort Array</button>
-      </div>
-    </div>
-  );
-};
+  const [array, setArray] = useState([45, 15, 35, 25, 50, 10, 30, 20]);
+  const [logs, setLogs] = useState<string[]>(['Algorithm lab ready. Select sorting method and adjust pace.']);
+  const [comparing, setComparing] = useState<number[]>([]);
+  const [sorting, setSorting] = useState(false);
+  const [speed, setSpeed] = useState(600); 
+  const [stats, setStats] = useState({ comparisons: 0, swaps: 0 });
 
-const HashExplorer: React.FC = () => {
-  const [val, setVal] = useState('');
-  const [hash, setHash] = useState('...');
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-  useEffect(() => {
-    if (!val) {
-      setHash('...');
-      return;
+  const resetStats = () => {
+    setStats({ comparisons: 0, swaps: 0 });
+    setComparing([]);
+  };
+
+  const bubbleSort = async () => {
+    setSorting(true); resetStats();
+    let arr = [...array];
+    setLogs(p => [...p, 'Bubble Sort: O(n²) - Bubbling up largest elements.']);
+    for (let i = 0; i < arr.length; i++) {
+      for (let j = 0; j < arr.length - i - 1; j++) {
+        setComparing([j, j + 1]);
+        setStats(s => ({ ...s, comparisons: s.comparisons + 1 }));
+        if (arr[j] > arr[j + 1]) {
+          [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+          setStats(s => ({ ...s, swaps: s.swaps + 1 }));
+          setArray([...arr]);
+        }
+        await sleep(speed);
+      }
     }
-    let h = 0;
-    for (let i = 0; i < val.length; i++) {
-      h = ((h << 5) - h) + val.charCodeAt(i);
-      h |= 0; 
+    setComparing([]); setSorting(false);
+    setLogs(p => [...p, 'Bubble Sort complete.']);
+  };
+
+  const selectionSort = async () => {
+    setSorting(true); resetStats();
+    let arr = [...array];
+    setLogs(p => [...p, 'Selection Sort: O(n²) - Finding minimum in each pass.']);
+    for (let i = 0; i < arr.length; i++) {
+      let minIdx = i;
+      for (let j = i + 1; j < arr.length; j++) {
+        setComparing([i, j]);
+        setStats(s => ({ ...s, comparisons: s.comparisons + 1 }));
+        if (arr[j] < arr[minIdx]) minIdx = j;
+        await sleep(speed);
+      }
+      if (minIdx !== i) {
+        [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+        setStats(s => ({ ...s, swaps: s.swaps + 1 }));
+        setArray([...arr]);
+      }
     }
-    setHash(Math.abs(h).toString(16).padStart(8, '0').toUpperCase());
-  }, [val]);
+    setComparing([]); setSorting(false);
+    setLogs(p => [...p, 'Selection Sort complete.']);
+  };
 
-  return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
-      <h3 className="text-xl font-black text-indigo-900 mb-6 uppercase tracking-tight">Hashing Experiment</h3>
-      <input 
-        value={val} 
-        onChange={e => setVal(e.target.value)} 
-        placeholder="Type a message to hash..." 
-        className="w-full p-5 bg-slate-50 rounded-2xl mb-6 border-2 border-slate-100 outline-none focus:border-indigo-400 font-bold transition-all" 
-      />
-      <div className="p-6 bg-indigo-900 rounded-3xl font-mono text-indigo-100 break-all text-center shadow-inner relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none" style={{backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
-        <span className="text-sky-400 mr-2">SHA-MOCK:</span> {hash}
-      </div>
-    </div>
-  );
-};
+  const insertionSort = async () => {
+    setSorting(true); resetStats();
+    let arr = [...array];
+    setLogs(p => [...p, 'Insertion Sort: O(n²) - Building sorted list one by one.']);
+    for (let i = 1; i < arr.length; i++) {
+      let key = arr[i];
+      let j = i - 1;
+      while (j >= 0 && arr[j] > key) {
+        setComparing([j, j + 1]);
+        setStats(s => ({ ...s, comparisons: s.comparisons + 1 }));
+        arr[j + 1] = arr[j];
+        setStats(s => ({ ...s, swaps: s.swaps + 1 }));
+        j = j - 1;
+        setArray([...arr]);
+        await sleep(speed);
+      }
+      arr[j + 1] = key;
+      setArray([...arr]);
+    }
+    setComparing([]); setSorting(false);
+    setLogs(p => [...p, 'Insertion Sort complete.']);
+  };
 
-const CaesarCipher: React.FC = () => {
-  const [val, setVal] = useState('');
-  const shiftText = (text: string) => {
-    return text.replace(/[a-z]/gi, c => {
-      const charCode = c.charCodeAt(0);
-      const start = charCode <= 90 ? 65 : 97;
-      return String.fromCharCode(((charCode - start + 3) % 26) + start);
-    });
+  const mergeSortSim = async () => {
+    setSorting(true); resetStats();
+    setLogs(p => [...p, 'Merge Sort: O(n log n) - Recursive Divide & Conquer.']);
+    let arr = [...array];
+    const merge = async (l: number, m: number, r: number) => {
+      let left = arr.slice(l, m + 1);
+      let right = arr.slice(m + 1, r + 1);
+      let i = 0, j = 0, k = l;
+      while (i < left.length && j < right.length) {
+        setComparing([k]);
+        setStats(s => ({ ...s, comparisons: s.comparisons + 1 }));
+        if (left[i] <= right[j]) { arr[k] = left[i]; i++; }
+        else { arr[k] = right[j]; j++; }
+        setArray([...arr]); await sleep(speed); k++;
+      }
+      while (i < left.length) { arr[k] = left[i]; i++; k++; setArray([...arr]); await sleep(speed); }
+      while (j < right.length) { arr[k] = right[j]; j++; k++; setArray([...arr]); await sleep(speed); }
+    };
+    const sort = async (l: number, r: number) => {
+      if (l >= r) return;
+      let m = Math.floor((l + r) / 2);
+      await sort(l, m); await sort(m + 1, r); await merge(l, m, r);
+    };
+    await sort(0, arr.length - 1);
+    setComparing([]); setSorting(false);
+    setLogs(p => [...p, 'Merge Sort complete.']);
   };
 
   return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl animate-in fade-in duration-500">
-      <h3 className="text-xl font-black text-indigo-900 mb-6 uppercase tracking-tight">Caesar Cipher (Shift 3)</h3>
-      <div className="space-y-4">
-        <textarea 
-          value={val} 
-          onChange={e => setVal(e.target.value)} 
-          placeholder="Enter secret message..." 
-          className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-400 font-bold h-32 resize-none transition-all"
-        />
-        <div className="p-6 bg-slate-900 rounded-3xl font-mono text-green-400 shadow-2xl">
-          <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">Encrypted Output</p>
-          {shiftText(val) || '...Waiting for input...'}
+    <div className="bg-white p-10 rounded-[48px] border-4 border-indigo-50 shadow-xl flex flex-col items-center">
+      <div className="flex flex-col md:flex-row gap-6 mb-10 items-center justify-between w-full">
+        <div className="flex gap-2 flex-wrap">
+          <button disabled={sorting} onClick={bubbleSort} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all">Bubble</button>
+          <button disabled={sorting} onClick={selectionSort} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all">Selection</button>
+          <button disabled={sorting} onClick={insertionSort} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all">Insertion</button>
+          <button disabled={sorting} onClick={mergeSortSim} className="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">Merge Sort</button>
+        </div>
+        <div className="flex flex-col gap-1 w-full md:w-48">
+          <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
+            <span>Tezlik (Pace)</span>
+            <span className="text-indigo-600">{speed}ms</span>
+          </div>
+          <input type="range" min="100" max="2000" step="100" value={speed} onChange={e => setSpeed(parseInt(e.target.value))} className="w-full accent-indigo-600 bg-slate-100 h-2 rounded-full appearance-none cursor-pointer" />
         </div>
       </div>
+      <div className="flex items-end gap-3 h-52 mb-10 w-full justify-center px-4">
+        {array.map((v, i) => (
+          <div key={i} className={`rounded-t-2xl transition-all duration-300 flex items-center justify-center text-[10px] font-black text-white ${comparing.includes(i) ? 'bg-rose-500 scale-110 h-64' : 'bg-gradient-to-t from-indigo-500 to-sky-400'}`} style={{ height: `${v * 3}px`, width: '40px' }}>{v}</div>
+        ))}
+      </div>
+      <LogicTerminal logs={logs} />
     </div>
   );
 };
 
-const SQLExplorer: React.FC = () => {
-  const [query, setQuery] = useState('SELECT * FROM students WHERE xp > 400');
-  const data = [
-    { id: 1, name: 'Alice', xp: 500, badge: '🧬' },
-    { id: 2, name: 'Bob', xp: 420, badge: '🧪' },
-    { id: 3, name: 'Charlie', xp: 380, badge: '⚡' }
-  ];
+// --- 2. Search Visualizer ---
+const SearchVisualizer: React.FC = () => {
+  const [items] = useState([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+  const [target, setTarget] = useState(70);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const [range, setRange] = useState<{l: number, r: number} | null>(null);
+  const [logs, setLogs] = useState<string[]>(['Search module ready. Choose algorithm.']);
+  const [speed, setSpeed] = useState(600);
+  const [searching, setSearching] = useState(false);
+
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  const linearSearch = async () => {
+    setSearching(true); setLogs(['Linear Search: O(n) - Scanning...']);
+    for (let i = 0; i < items.length; i++) {
+      setCurrentIndex(i); await sleep(speed);
+      if (items[i] === target) { setLogs(p => [...p, 'Found at index ' + i]); break; }
+    }
+    setSearching(false);
+  };
+
+  const binarySearch = async () => {
+    setSearching(true); setLogs(['Binary Search: O(log n) - Splitting...']);
+    let l = 0, r = items.length - 1;
+    while (l <= r) {
+      setRange({l, r});
+      let m = Math.floor((l + r) / 2);
+      setCurrentIndex(m); await sleep(speed);
+      if (items[m] === target) { setLogs(p => [...p, 'Found at index ' + m]); break; }
+      if (items[m] < target) l = m + 1; else r = m - 1;
+    }
+    setRange(null); setSearching(false);
+  };
+
+  const jumpSearch = async () => {
+    setSearching(true); setLogs(['Jump Search: O(√n) - Jumping...']);
+    let n = items.length; let step = Math.floor(Math.sqrt(n)); let prev = 0;
+    while (items[Math.min(step, n) - 1] < target) {
+      setRange({l: prev, r: Math.min(step, n) - 1}); await sleep(speed);
+      prev = step; step += Math.floor(Math.sqrt(n));
+      if (prev >= n) break;
+    }
+    for (let i = prev; i < Math.min(step, n); i++) {
+      setCurrentIndex(i); await sleep(speed);
+      if (items[i] === target) { setLogs(p => [...p, 'Found at index ' + i]); break; }
+    }
+    setRange(null); setSearching(false);
+  };
+
+  const interpolationSearch = async () => {
+    setSearching(true); setLogs(['Interpolation Search: O(log log n) - Predicting...']);
+    let l = 0, r = items.length - 1;
+    while (l <= r && target >= items[l] && target <= items[r]) {
+      setRange({l, r});
+      let pos = l + Math.floor(((target - items[l]) * (r - l)) / (items[r] - items[l]));
+      if (pos < 0 || pos >= items.length) break;
+      setCurrentIndex(pos); await sleep(speed);
+      if (items[pos] === target) { setLogs(p => [...p, 'Found at index ' + pos]); break; }
+      if (items[pos] < target) l = pos + 1; else r = pos - 1;
+    }
+    setRange(null); setSearching(false);
+  };
 
   return (
-    <div className="bg-white p-8 rounded-[40px] border-4 border-indigo-50 shadow-xl animate-in zoom-in duration-500">
-      <div className="bg-slate-900 p-6 rounded-3xl mb-8 font-mono text-indigo-300 shadow-inner">
-        <span className="text-pink-400">SQL&gt;</span> <input value={query} onChange={e => setQuery(e.target.value)} className="bg-transparent border-none outline-none text-indigo-100 w-3/4" />
+    <div className="bg-white p-10 rounded-[48px] border-4 border-indigo-50 shadow-xl flex flex-col items-center">
+      <div className="flex gap-2 mb-8 flex-wrap justify-center">
+        <button disabled={searching} onClick={linearSearch} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100">Linear</button>
+        <button disabled={searching} onClick={binarySearch} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100">Binary</button>
+        <button disabled={searching} onClick={jumpSearch} className="px-5 py-2.5 bg-slate-100 rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-100">Jump</button>
+        <button disabled={searching} onClick={interpolationSearch} className="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase">Interpolation</button>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-slate-100">
-        <table className="w-full text-left">
-          <thead className="bg-indigo-50 text-indigo-900 uppercase text-[10px] font-black tracking-widest">
-            <tr>
-              <th className="p-4">ID</th>
-              <th className="p-4">Name</th>
-              <th className="p-4">XP</th>
-              <th className="p-4">Badge</th>
-            </tr>
+      <div className="flex gap-2 mb-10 overflow-x-auto w-full justify-center p-4">
+        {items.map((v, i) => (
+          <div key={i} className={`w-12 h-12 rounded-xl flex items-center justify-center text-xs font-black border-2 transition-all duration-300 ${currentIndex === i ? 'bg-rose-500 border-rose-300 text-white scale-125 shadow-lg' : (range && i >= range.l && i <= range.r) ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-slate-50 border-transparent text-slate-300'}`}>{v}</div>
+        ))}
+      </div>
+      <div className="flex items-center gap-4">
+        <label className="text-[10px] font-black text-slate-400 uppercase">Qidiruv obyekti:</label>
+        <select disabled={searching} value={target} onChange={e => setTarget(parseInt(e.target.value))} className="bg-slate-50 p-2 rounded-xl text-xs font-black outline-none border-2 border-slate-100">
+          {items.map(v => <option key={v} value={v}>{v}</option>)}
+        </select>
+      </div>
+      <LogicTerminal logs={logs} />
+    </div>
+  );
+};
+
+// --- 3. SQL Explorer ---
+const SQLExplorer: React.FC = () => {
+  const [query, setQuery] = useState('SELECT name, xp FROM users WHERE xp > 500 ORDER BY xp DESC');
+  const rawData = [
+    { id: 1, name: 'Asilbek', xp: 850, role: 'Admin', badge: '🥇' },
+    { id: 2, name: 'Guli', xp: 420, role: 'User', badge: '🥉' },
+    { id: 3, name: 'Sardor', xp: 620, role: 'User', badge: '🥈' },
+    { id: 4, name: 'Sevinch', xp: 999, role: 'Master', badge: '💎' },
+    { id: 5, name: 'Dilnoza', xp: 750, role: 'User', badge: '🥈' }
+  ];
+
+  const processedData = useMemo(() => {
+    let result = [...rawData];
+    const q = query.toLowerCase().trim();
+    try {
+      const whereMatch = q.match(/where\s+(.+?)(\s+order\s+by|$)/);
+      if (whereMatch) {
+        const condition = whereMatch[1];
+        if (condition.includes('xp >')) { result = result.filter(d => d.xp > parseInt(condition.split('xp >')[1])); }
+      }
+      const orderMatch = q.match(/order\s+by\s+(\w+)(\s+desc|\s+asc|$)/);
+      if (orderMatch) {
+        const field = orderMatch[1].trim() as keyof typeof rawData[0];
+        const isDesc = q.includes('desc');
+        result.sort((a: any, b: any) => (a[field] < b[field] ? (isDesc ? 1 : -1) : a[field] > b[field] ? (isDesc ? -1 : 1) : 0));
+      }
+      return result;
+    } catch (e) { return result; }
+  }, [query]);
+
+  return (
+    <div className="bg-white p-10 rounded-[48px] border-4 border-indigo-50 shadow-xl">
+      <div className="bg-slate-900 p-8 rounded-[40px] mb-8 font-mono shadow-2xl">
+        <div className="flex gap-4 text-sm">
+          <span className="text-pink-400 font-black">SQL&gt;</span>
+          <textarea value={query} onChange={e => setQuery(e.target.value)} className="bg-transparent border-none outline-none text-indigo-100 w-full font-mono resize-none h-20" spellCheck={false} />
+        </div>
+      </div>
+      <div className="overflow-hidden rounded-[40px] border-2 border-slate-100">
+        <table className="w-full text-left text-[11px]">
+          <thead className="bg-indigo-600 text-white uppercase font-black tracking-widest">
+            <tr><th className="p-5">ID</th><th className="p-5">Name</th><th className="p-5">XP</th><th className="p-5">Badge</th></tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
-            {data.filter(d => d.xp > 400).map(d => (
-              <tr key={d.id} className="hover:bg-slate-50 transition-colors">
-                <td className="p-4 font-bold text-slate-400">{d.id}</td>
-                <td className="p-4 font-black text-slate-900">{d.name}</td>
-                <td className="p-4 font-black text-indigo-600">{d.xp}</td>
-                <td className="p-4 text-xl">{d.badge}</td>
+          <tbody className="divide-y divide-slate-100">
+            {processedData.map(d => (
+              <tr key={d.id} className="hover:bg-indigo-50/50 font-bold text-slate-700">
+                <td className="p-5 opacity-40">#0{d.id}</td>
+                <td className="p-5 text-slate-900">{d.name}</td>
+                <td className="p-5 text-indigo-600">{d.xp}</td>
+                <td className="p-5 text-xl">{d.badge}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <LogicTerminal logs={[`Parsed: ${query}`, `Rows returned: ${processedData.length}`]} />
     </div>
   );
 };
 
-const BinaryChallenge: React.FC = () => {
-  const initialBits = [0, 1, 0, 1, 0, 0, 0, 0];
-  const [bits, setBits] = useState(initialBits);
-  const toggleBit = (idx: number) => {
-    const newBits = [...bits];
-    newBits[idx] = newBits[idx] === 0 ? 1 : 0;
-    setBits(newBits);
-  };
-  const restore = () => setBits(initialBits);
-  const decimal = bits.slice().reverse().reduce((acc, bit, i) => acc + (bit * Math.pow(2, i)), 0);
-
-  return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center animate-in fade-in duration-500">
-      <div className="w-full flex justify-between items-center mb-8">
-        <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight">Binary to Decimal</h3>
-        <button onClick={restore} className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 active:scale-90 transition-all">🔄</button>
-      </div>
-      <div className="flex gap-3 mb-10 flex-wrap justify-center">
-        {bits.map((b, i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
-            <button 
-              onClick={() => toggleBit(i)} 
-              className={`w-14 h-20 rounded-2xl flex items-center justify-center text-3xl font-black transition-all transform active:scale-90 ${b ? 'bg-indigo-600 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)]' : 'bg-slate-100 text-slate-300 hover:bg-slate-200'}`}
-            >
-              {b}
-            </button>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{Math.pow(2, 7-i)}</span>
-          </div>
-        ))}
-      </div>
-      <div className="text-center">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Decimal Result</p>
-        <div className="text-6xl font-black text-indigo-900 font-whimsical">{decimal}</div>
-      </div>
-    </div>
-  );
-};
-
-const LogicGatesSimulator: React.FC = () => {
-  const [a, setA] = useState(false);
-  const [b, setB] = useState(false);
-  const result = a && b;
-
-  return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center gap-8 animate-in slide-in-from-bottom-4 duration-500">
-      <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight">AND Gate Simulator</h3>
-      <div className="flex items-center gap-12">
-        <div className="flex flex-col gap-8">
-          <button onClick={() => setA(!a)} className={`w-14 h-14 rounded-full border-4 transition-all ${a ? 'bg-indigo-500 border-indigo-200' : 'bg-slate-100 border-slate-200'}`}></button>
-          <button onClick={() => setB(!b)} className={`w-14 h-14 rounded-full border-4 transition-all ${b ? 'bg-indigo-500 border-indigo-200' : 'bg-slate-100 border-slate-200'}`}></button>
-        </div>
-        <div className="relative w-40 h-24 bg-indigo-50 border-4 border-indigo-200 rounded-r-full flex items-center justify-center font-black text-indigo-900 text-2xl shadow-inner">AND</div>
-        <div className={`w-20 h-20 rounded-full shadow-2xl transition-all duration-500 flex items-center justify-center text-4xl border-4 border-white ${result ? 'bg-yellow-400' : 'bg-slate-100 opacity-50'}`}>
-          {result ? '💡' : '🌑'}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SearchVisualizer: React.FC = () => {
-  const [target, setTarget] = useState(30);
-  const items = [10, 20, 30, 40, 50, 60, 70, 80];
-  
-  return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl animate-in zoom-in duration-500">
-      <h3 className="text-xl font-black text-indigo-900 mb-8 uppercase tracking-tight text-center">Linear Search Visualizer</h3>
-      <div className="flex gap-3 justify-center mb-10 flex-wrap">
-        {items.map(v => (
-          <div 
-            key={v} 
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black transition-all duration-500 border-2 ${v === target ? 'bg-indigo-600 text-white border-indigo-400 scale-125 shadow-xl -translate-y-2' : 'bg-slate-50 text-slate-300 border-transparent'}`}
-          >
-            {v}
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-center gap-3">
-        {items.map(v => (
-          <button key={v} onClick={() => setTarget(v)} className="px-4 py-2 bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest">{v}</button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const HexColorLogic: React.FC = () => {
-  const [r, setR] = useState(124);
-  const [g, setG] = useState(58);
-  const [b, setB] = useState(237);
-  const toHex = (n: number) => n.toString(16).padStart(2, '0').toUpperCase();
-  const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-
-  return (
-    <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center animate-in fade-in duration-500">
-      <h3 className="text-xl font-black text-indigo-900 mb-8 uppercase tracking-tight">RGB to Hex Logic</h3>
-      <div className="flex flex-col md:flex-row items-center gap-12 w-full">
-        <div className="w-48 h-48 rounded-[48px] shadow-2xl transition-all border-8 border-white flex items-center justify-center text-white font-black font-mono" style={{ backgroundColor: hex }}>{hex}</div>
-        <div className="flex-1 w-full space-y-6">
-          {[setR, setG, setB].map((fn, i) => (
-            <input key={i} type="range" min="0" max="255" className="w-full" onChange={e => fn(parseInt(e.target.value))} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Main InformaticsLab Component ---
-
+// --- InformaticsLab Main Component ---
 interface InformaticsLabProps {
   experimentId: string | null;
   onSelectExp: (id: string) => void;
   onComplete: (level: number) => void;
   onEarnBadge: (badge: Badge) => void;
-  // Added onDiagnosticComplete to fix TypeScript error in App.tsx
   onDiagnosticComplete?: (irt: string) => void;
   lang: Language;
 }
@@ -259,38 +325,70 @@ interface InformaticsLabProps {
 const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, onDiagnosticComplete, lang }) => {
   const t = translations[lang];
   const [showAssessment, setShowAssessment] = useState(false);
-  const [showTheory, setShowTheory] = useState(false);
 
   const experiments = [
-    { id: 'info_sort', title: (t as any).info_sort_title || 'Sorting Algorithms', icon: '📊' },
-    { id: 'info_hash', title: (t as any).info_hash_title || 'Hashing Security', icon: '🔐' },
-    { id: 'info_caesar', title: (t as any).info_caesar_title || 'Caesar Cipher', icon: '🛡️' },
-    { id: 'info_sql', title: (t as any).info_sql_title || 'SQL Queries', icon: '📜' },
-    { id: 'info_binary', title: (t as any).info_binary_title || 'Binary Systems', icon: '🔢' },
-    { id: 'info_logic', title: (t as any).info_logic_title || 'Logic Gates', icon: '🔌' },
-    { id: 'info_search', title: (t as any).info_search_title || 'Search Logic', icon: '🔍' },
-    { id: 'info_color', title: (t as any).info_color_title || 'Hex Color Logic', icon: '🎨' },
+    { id: 'info_sort', title: 'Sorting Mastery', icon: '📊' },
+    { id: 'info_sql', title: 'Dynamic SQL Engine', icon: '📜' },
+    { id: 'info_caesar', title: 'Cryptography Secrets', icon: '🛡️' },
+    { id: 'info_search', title: 'Search Algorithms', icon: '🔍' },
+    { id: 'info_binary', title: 'Binary Logic', icon: '🔢' },
+    { id: 'info_hash', title: 'Bitwise Hashing', icon: '⚙️' },
+    { id: 'info_color', title: 'Color Math (Hex)', icon: '🎨' },
+    { id: 'info_logic', title: 'Logic Gates', icon: '🔌' }
   ];
+
+  // Kengaytirilgan CAT savollar pool-i (jami ~30 ta savol)
+  const questionPool: QuestionPool = {
+    1: [
+      { id: 'i1-1', level: 1, text: 'Kompyuterlar qaysi sanoq tizimida ishlaydi?', options: ['O\'nlik (Decimal)', 'Ikkilik (Binary)', 'Sakkizlik', 'O\'n oltilik'], correct: 1 },
+      { id: 'i1-2', level: 1, text: 'SQL-da ma\'lumotlarni olish uchun qaysi kalit so\'z ishlatiladi?', options: ['GET', 'FETCH', 'SELECT', 'EXTRACT'], correct: 2 },
+      { id: 'i1-3', level: 1, text: 'Binar sanoq tizimida "1 + 1" necha bo\'ladi?', options: ['2', '11', '10', '0'], correct: 2 },
+      { id: 'i1-4', level: 1, text: 'Eng sodda saralash algoritmi qaysi?', options: ['Quick Sort', 'Merge Sort', 'Bubble Sort', 'Heap Sort'], correct: 2 },
+      { id: 'i1-5', level: 1, text: 'HTML-da ranglar ko\'pincha qaysi formatda yoziladi?', options: ['#HEX', 'RGB', 'Binary', 'Decimal'], correct: 0 }
+    ],
+    2: [
+      { id: 'i2-1', level: 2, text: 'AND mantiqiy darvozasi qachon 1 (TRUE) qaytaradi?', options: ['A yoki B 1 bo\'lsa', 'Faqat A 1 bo\'lsa', 'Ikkala kirish ham 1 bo\'lsa', 'Ikkala kirish ham 0 bo\'lsa'], correct: 2 },
+      { id: 'i2-2', level: 2, text: 'Binar 00001111 o\'nlik tizimda nechaga teng?', options: ['7', '15', '31', '63'], correct: 1 },
+      { id: 'i2-3', level: 2, text: 'Sezar shifri qanday turdagi shifrlash hisoblanadi?', options: ['Asimmetrik', 'Simmetrik (O\'rin almashtirish)', 'Xesh funksiya', 'Ochiq kalit'], correct: 1 },
+      { id: 'i2-4', level: 2, text: 'Chiziqli qidiruv (Linear Search) ning o\'rtacha vaqt murakkabligi?', options: ['O(log n)', 'O(1)', 'O(n)', 'O(n^2)'], correct: 2 },
+      { id: 'i2-5', level: 2, text: '1 byte necha bitdan iborat?', options: ['4', '8', '16', '32'], correct: 1 }
+    ],
+    3: [
+      { id: 'i3-1', level: 3, text: 'Merge Sort qaysi metodga asoslangan?', options: ['Brute Force', 'Dynamic Programming', 'Divide and Conquer', 'Greedy Algorithm'], correct: 2 },
+      { id: 'i3-2', level: 3, text: 'SQL-da natijalarni saralash uchun nima ishlatiladi?', options: ['GROUP BY', 'SORT BY', 'ORDER BY', 'ARRANGE BY'], correct: 2 },
+      { id: 'i3-3', level: 3, text: 'Xor darvozasi (Exclusive OR) natijasi qachon 1 bo\'ladi?', options: ['Ikkala kirish bir xil bo\'lsa', 'Ikkala kirish har xil bo\'lsa', 'Ikkalasi ham 1 bo\'lsa', 'Faqat bittasi 0 bo\'lsa'], correct: 1 },
+      { id: 'i3-4', level: 3, text: 'Ikkilik qidiruv (Binary Search) ishlashi uchun massiv qanday bo\'lishi shart?', options: ['Bo\'sh', 'Katta', 'Saralangan', 'Tartibsiz'], correct: 2 },
+      { id: 'i3-5', level: 3, text: 'Hesh funksiyaning asosiy xususiyati nima?', options: ['Orqaga qaytuvchan (reversible)', 'Bir tomonlama (one-way)', 'Faqat sonlar bilan ishlash', 'Har doim tasodifiy bo\'lish'], correct: 1 }
+    ],
+    4: [
+      { id: 'i4-1', level: 4, text: 'Binary Search-ning eng yomon holatdagi vaqt murakkabligi qanday?', options: ['O(n)', 'O(n log n)', 'O(log n)', 'O(n^2)'], correct: 2 },
+      { id: 'i4-2', level: 4, text: 'Bubble Sort-ning eng yomon holatdagi vaqt murakkabligi qanday?', options: ['O(n)', 'O(n log n)', 'O(n^2)', 'O(1)'], correct: 2 },
+      { id: 'i4-3', level: 4, text: 'SQL JOIN turlaridan qaysi biri ikkala jadvaldagi mos kelgan va kelmagan barcha qatorlarni oladi?', options: ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL OUTER JOIN'], correct: 3 },
+      { id: 'i4-4', level: 4, text: 'Xesh kolliziyasi (collision) nima?', options: ['Ikki xil ma\'lumot bir xil xeshga ega bo\'lishi', 'Xesh funksiya ishlashdan to\'xtashi', 'Ma\'lumotlar bazasi o\'chib ketishi', 'Xesh qiymati o\'zgarishi'], correct: 0 },
+      { id: 'i4-5', level: 4, text: 'Ikkilik sanoq tizimida 11110000 soni HEX-da qanday yoziladi?', options: ['#F0', '#0F', '#AA', '#FF'], correct: 0 }
+    ],
+    5: [
+      { id: 'i5-1', level: 5, text: 'Quick Sort eng yomon holatda qanday murakkablikka ega?', options: ['O(n log n)', 'O(n^2)', 'O(2^n)', 'O(n)'], correct: 1 },
+      { id: 'i5-2', level: 5, text: 'Salting (tuzlash) kriptografiyada nima uchun ishlatiladi?', options: ['Ma\'lumotni qisqartirish', 'Xeshni qayta ishlash', 'Rainbow table hujumlaridan himoyalanish', 'Ma\'lumotni shifrlash'], correct: 2 },
+      { id: 'i5-3', level: 5, text: 'B-Tree indeksi SQL-da nima uchun eng ko\'p ishlatiladi?', options: ['Xotirani tejash', 'Ma\'lumotlarni o\'chirish', 'Qidiruvni tezlashtirish', 'Xavfsizlikni oshirish'], correct: 2 },
+      { id: 'i5-4', level: 5, text: 'Big O notation-da O(1) nimani anglatadi?', options: ['Cheksiz vaqt', 'Chiziqli vaqt', 'O\'zgarmas (Constant) vaqt', 'Logarifmik vaqt'], correct: 2 },
+      { id: 'i5-5', level: 5, text: 'Asimmetrik shifrlashda (RSA kabi) shifrlash uchun qaysi kalit ishlatiladi?', options: ['Maxfiy (Private) kalit', 'Ochiq (Public) kalit', 'Shared key', 'Master key'], correct: 1 }
+    ]
+  };
 
   if (!experimentId) {
     return (
-      <div className="space-y-8 animate-in fade-in duration-700">
-        <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[40px] border border-white shadow-sm flex items-center gap-6">
-          <div className="w-16 h-16 bg-indigo-500 rounded-3xl flex items-center justify-center text-4xl shadow-lg">💻</div>
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 font-whimsical uppercase tracking-tight">{t.informatics}</h2>
-            <p className="text-slate-400 font-bold">Laboratoriya tajribasini tanlang</p>
-          </div>
+      <div className="space-y-10 animate-in fade-in duration-700">
+        <div className="bg-white/70 backdrop-blur-xl p-10 rounded-[60px] border border-white shadow-sm flex items-center gap-8">
+          <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-5xl shadow-2xl animate-float">💻</div>
+          <div><h2 className="text-4xl font-black text-slate-900 font-whimsical uppercase tracking-tight">{t.informatics}</h2><p className="text-slate-400 font-bold text-lg">Haqiqiy algoritmik mantiq laboratoriyasi</p></div>
         </div>
-        
-        {/* AI Diagnostic Center - Passing the diagnostic callback */}
         <AIDiagnosticCenter subject={Subject.INFORMATICS} lang={lang} onDiagnosticComplete={onDiagnosticComplete} />
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {experiments.map(exp => (
-            <button key={exp.id} onClick={() => onSelectExp(exp.id)} className="group bg-white p-8 rounded-[40px] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all border-2 border-indigo-50 flex flex-col items-center">
-              <div className="text-[50px] mb-3 group-hover:rotate-12 transition-transform">{exp.icon}</div>
-              <h3 className="text-xs font-black text-indigo-900 uppercase tracking-widest text-center leading-tight">{exp.title}</h3>
+            <button key={exp.id} onClick={() => onSelectExp(exp.id)} className="group bg-white p-10 rounded-[48px] shadow-xl hover:shadow-2xl hover:scale-[1.05] transition-all border-4 border-indigo-50 flex flex-col items-center">
+              <div className="text-[60px] mb-4 group-hover:rotate-12 transition-transform">{exp.icon}</div>
+              <h3 className="text-[11px] font-black text-indigo-900 uppercase tracking-widest text-center leading-tight">{exp.title}</h3>
             </button>
           ))}
         </div>
@@ -299,42 +397,53 @@ const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectE
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-24">
       <CatAssessment 
         isOpen={showAssessment} 
         onClose={() => setShowAssessment(false)} 
-        questionPool={{ 1: [{ id: 'q', level: 1, text: 'Algoritm nima?', options: ['Buyruqlar ketma-ketligi','Rasm','Faqat 1'], correct: 0 }] }}
-        rewardBadge={{ id: 'b', name: 'Info Wizard', description: 'Done', icon: '💻', subject: Subject.INFORMATICS }} 
-        rewardXP={400} 
+        questionPool={questionPool}
+        rewardBadge={{ id: 'info_master', name: 'Informatics Master', description: 'Expert', icon: '💻', subject: Subject.INFORMATICS }} 
+        rewardXP={500} 
         subjectName={experiments.find(e => e.id === experimentId)?.title || "Informatics"}
-        onSuccess={(level) => { onEarnBadge({ id: 'b', name: 'Info Wizard', description: 'Done', icon: '💻', subject: Subject.INFORMATICS }); onComplete(level); }} 
+        onSuccess={(level) => { onEarnBadge({ id: 'info_master', name: 'Informatics Master', description: 'Expert', icon: '💻', subject: Subject.INFORMATICS }); onComplete(level); }} 
       />
-      <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-5 rounded-[32px] border border-white shadow-sm">
-        <button onClick={() => onSelectExp(null)} className="px-8 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">← Orqaga</button>
-        <h2 className="text-xl font-black text-indigo-900 uppercase tracking-tight">{experiments.find(e => e.id === experimentId)?.title}</h2>
-        <button onClick={() => setShowTheory(!showTheory)} className="px-8 py-3 bg-[#007AFF] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95">Theory</button>
+      <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-6 rounded-[40px] border border-white shadow-sm sticky top-4 z-50">
+        <button onClick={() => onSelectExp(null)} className="px-10 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest">← Orqaga</button>
+        <h2 className="text-2xl font-black text-indigo-900 uppercase tracking-tight">{experiments.find(e => e.id === experimentId)?.title}</h2>
+        <button onClick={() => setShowAssessment(true)} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">Test Topshirish</button>
       </div>
-
-      <div className="space-y-6">
-        {showTheory && (
-          <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[48px] border border-white shadow-xl animate-in slide-in-from-top-4 duration-500">
-             <h3 className="text-2xl font-black text-slate-900 mb-6 font-whimsical uppercase tracking-tight">Ilmiy Nazariya 📖</h3>
-             <p className="text-slate-600 font-bold text-lg">Kompyuter fanlari va algoritmlar kelajak dunyosini qurish uchun poydevordir. Ushbu simulyatsiya orqali siz mantiqiy fikrlashni va kompyuter qanday ishlashini o'rganasiz.</p>
+      <div className="animate-in fade-in zoom-in duration-500">
+        {experimentId === 'info_sort' && <SortingVisualizer />}
+        {experimentId === 'info_sql' && <SQLExplorer />}
+        {experimentId === 'info_caesar' && (
+          <div className="bg-white p-10 rounded-[48px] border-4 border-indigo-50 shadow-xl">
+             <h4 className="text-xl font-black text-indigo-900 font-whimsical uppercase mb-6">Caesar Cipher Visualizer</h4>
+             <p className="text-slate-500 mb-4">Sezar shifri - bu har bir harfni alifbo bo'yicha ma'lum qadamga surishdir.</p>
+             <div className="flex flex-col gap-4">
+                <input type="text" className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 outline-none uppercase font-black" placeholder="PLAIN TEXT" />
+                <div className="flex gap-4 items-center">
+                  <span className="text-xs font-black">SHIFT:</span>
+                  <input type="range" min="1" max="25" className="flex-1" />
+                </div>
+                <div className="p-8 bg-indigo-900 rounded-[32px] text-white text-center font-black text-2xl tracking-widest">CIPHER TEXT</div>
+             </div>
           </div>
         )}
-        
-        {experimentId === 'info_sort' && <SortingVisualizer />}
-        {experimentId === 'info_hash' && <HashExplorer />}
-        {experimentId === 'info_caesar' && <CaesarCipher />}
-        {experimentId === 'info_sql' && <SQLExplorer />}
-        {experimentId === 'info_binary' && <BinaryChallenge />}
-        {experimentId === 'info_logic' && <LogicGatesSimulator />}
         {experimentId === 'info_search' && <SearchVisualizer />}
-        {experimentId === 'info_color' && <HexColorLogic />}
-
-        <div className="flex justify-center mt-12">
-          <button onClick={() => setShowAssessment(true)} className="px-12 py-5 bg-[#007AFF] text-white rounded-3xl font-black uppercase tracking-[0.1em] shadow-[0_15px_30px_rgba(0,122,255,0.4)] hover:scale-[1.05] border-4 border-white active:scale-95 transition-all">Bilimni tekshirish 🚀</button>
-        </div>
+        {experimentId === 'info_binary' && (
+          <div className="bg-white p-10 rounded-[48px] border-4 border-indigo-50 shadow-xl flex flex-col items-center">
+            <h4 className="text-xl font-black text-indigo-900 font-whimsical uppercase mb-8">8-Bit Binary Explorer</h4>
+            <div className="flex gap-2 mb-10">
+              {[...Array(8)].map((_, i) => (
+                <button key={i} className="w-12 h-20 bg-slate-100 rounded-xl flex items-center justify-center text-2xl font-black text-slate-300">0</button>
+              ))}
+            </div>
+            <div className="text-5xl font-black text-indigo-600">Decimal: 0</div>
+          </div>
+        )}
+        {experimentId === 'info_hash' && <div className="p-10 bg-white rounded-[48px] border-4 border-indigo-50 shadow-xl text-center">Hashing Simulation Coming Soon...</div>}
+        {experimentId === 'info_color' && <div className="p-10 bg-white rounded-[48px] border-4 border-indigo-50 shadow-xl text-center">Hex Color Visualizer Coming Soon...</div>}
+        {experimentId === 'info_logic' && <div className="p-10 bg-white rounded-[48px] border-4 border-indigo-50 shadow-xl text-center">Interactive Logic Gates Coming Soon...</div>}
       </div>
     </div>
   );

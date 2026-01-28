@@ -21,7 +21,6 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
       return;
     }
 
-    // Keshni tekshirish
     const cacheKey = `spark_fact_${subject}_${lang}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached && !forceNew) {
@@ -31,12 +30,12 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
 
     setIsThinking(true);
     try {
-      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Bepul tier uchun eng optimal model
       const promptText = `Short science fun fact about ${subject} in ${lang}. 1 sentence + emojis.`;
       
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.5-flash-lite-latest',
         contents: promptText,
       });
       
@@ -45,11 +44,7 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
       localStorage.setItem(cacheKey, result);
     } catch (err: any) {
       console.error("Spark AI Error:", err);
-      if (err.message?.includes('429')) {
-        setMessage(t.ai_error_rate_limit);
-      } else {
-        setMessage("Izlanishdan to'xtama! 🌟");
-      }
+      setMessage("Izlanishdan to'xtama! 🌟");
     } finally {
       setIsThinking(false);
     }

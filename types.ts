@@ -6,7 +6,8 @@ export enum Subject {
   INFORMATICS = 'Informatics',
   HOME = 'Home',
   LEADERBOARD = 'Leaderboard',
-  ABOUT = 'About'
+  ABOUT = 'About',
+  GUIDE = 'Guide'
 }
 
 export type Language = 'uz' | 'en' | 'ru';

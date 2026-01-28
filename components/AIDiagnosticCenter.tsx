@@ -66,8 +66,8 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
     setReport(null);
 
     try {
-      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Vizual tahlil uchun eng so'nggi va tushunish qobiliyati yuqori model
       const promptText = `Analyze this ${subject} screenshot for a young student. Provide an encouraging scientific analysis. Language: ${lang}.`;
 
       const response = await ai.models.generateContent({
@@ -122,7 +122,7 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
              <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-[32px] flex items-center justify-center text-4xl shadow-lg animate-float">👨‍🏫</div>
              <div>
                 <h3 className="text-3xl font-black text-white font-whimsical uppercase tracking-tight">{t.ai_diagnostic_title}</h3>
-                <p className="text-indigo-400/50 font-black text-[10px] uppercase tracking-[0.4em]">Gemini AI Intelligence</p>
+                <p className="text-indigo-400/50 font-black text-[10px] uppercase tracking-[0.4em]">Spark Cognitive System</p>
              </div>
           </div>
           
