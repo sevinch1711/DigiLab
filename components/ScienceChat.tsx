@@ -41,15 +41,15 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
     setIsThinking(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Tejamkor model RPM limitlari kengroq
-      const promptText = `Roleplay as Professor Spark, a magical and encouraging science mentor. Give a very brief, inspiring answer for a young student about ${subject} in ${lang}. User says: ${userMsg}`;
+      // Free tier uchun eng yuqori RPM model: gemini-flash-lite-latest
+      const promptText = `Roleplay as Professor Spark for ${subject} in ${lang}. Be encouraging, brief (max 2 sentences). User: ${userMsg}`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite-latest',
+        model: 'gemini-flash-lite-latest',
         contents: promptText,
       });
 
-      const botResponse = response.text || (lang === 'uz' ? "Laboratoriya aloqasi uzildi." : "Lab connection lost.");
+      const botResponse = response.text || "...";
       setMessages(prev => [...prev, { role: 'model' as const, text: botResponse }]);
     } catch (err: any) {
       console.error("Chat Error:", err);
@@ -77,7 +77,7 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
               <span className="font-black text-[10px] uppercase tracking-[0.2em]">{t.chat_title}</span>
             </div>
             <div className="flex gap-2">
-              <button onClick={clearChat} title="Tozalash" className="bg-white/10 w-8 h-8 rounded-full flex items-center justify-center text-xs">🗑️</button>
+              <button onClick={clearChat} title="Clear" className="bg-white/10 w-8 h-8 rounded-full flex items-center justify-center text-xs">🗑️</button>
               <button onClick={() => setIsOpen(false)} className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
             </div>
           </div>

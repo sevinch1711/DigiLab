@@ -31,20 +31,20 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
     setIsThinking(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Bepul tier uchun eng optimal model
-      const promptText = `Short science fun fact about ${subject} in ${lang}. 1 sentence + emojis.`;
+      // Free Tier uchun eng yuqori RPM (10) model: gemini-flash-lite-latest
+      const promptText = `Provide 1 very short, exciting science fact or tip about ${subject} in ${lang}. Max 12 words. Use 1 emoji. Be unique.`;
       
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite-latest',
+        model: 'gemini-flash-lite-latest',
         contents: promptText,
       });
       
-      const result = response.text || "Ilm-fan yo'li - nurli yo'l! ✨";
+      const result = response.text || "Ilm - nurli yo'l! ✨";
       setMessage(result);
       localStorage.setItem(cacheKey, result);
     } catch (err: any) {
       console.error("Spark AI Error:", err);
-      setMessage("Izlanishdan to'xtama! 🌟");
+      setMessage("Izlanishda davom et! 🌟");
     } finally {
       setIsThinking(false);
     }
@@ -79,7 +79,7 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
               onClick={() => getSparkMessage(true)}
               className="mt-4 text-[10px] font-black text-sky-500 hover:text-sky-700 underline uppercase tracking-widest"
             >
-              {lang === 'uz' ? 'Yana maslahat?' : 'Another tip?'}
+              Another tip?
             </button>
           )}
         </div>
@@ -89,9 +89,7 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
         className="w-20 h-20 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-4xl shadow-2xl hover:scale-110 active:scale-95 transition-all border-4 border-white animate-float relative"
       >
         👨‍🏫
-        {!isOpen && (
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white">!</div>
-        )}
+        {!isOpen && <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white">!</div>}
       </button>
     </div>
   );
