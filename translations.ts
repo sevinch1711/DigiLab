@@ -68,7 +68,10 @@ export const translations = {
     thesis_intro: "KIRISH: Zamonaviy axborot jamiyati sharoitida ta’lim tizimini raqamlashtirish ustuvor vazifa hisoblanadi.",
     chapter1_title: "I BOB. NAZARIY ASOSLAR",
     chapter2_title: "II BOB. TEXNIK ARXITEKTURA",
-    chapter3_title: "III BOB. SMART DIAGNOSTIKA"
+    chapter3_title: "III BOB. SMART DIAGNOSTIKA",
+    ai_error_rate_limit: "Bugungi limit (20 ta so'rov) tugadi! Ertaga qaytib keling yoki 1 daqiqa kuting. ⏳",
+    ai_error_key: "API kalit o'rnatilmagan. Sozlamalarni tekshiring. 🔑",
+    ai_error_general: "AI hozirda band. Keyinroq urinib ko'ring. 🌐"
   },
   en: {
     welcome: "Welcome, Future Scientist! 🔬",
@@ -138,7 +141,10 @@ export const translations = {
     thesis_intro: "INTRODUCTION: Digitizing education is a priority in the information age.",
     chapter1_title: "CH 1. THEORETICAL BASIS",
     chapter2_title: "CH 2. TECHNICAL ARCHITECTURE",
-    chapter3_title: "CH 3. SMART DIAGNOSTICS"
+    chapter3_title: "CH 3. SMART DIAGNOSTICS",
+    ai_error_rate_limit: "Daily limit (20 requests) reached! Come back tomorrow. ⏳",
+    ai_error_key: "API key is missing. Check settings. 🔑",
+    ai_error_general: "AI is currently busy. Try again later. 🌐"
   },
   ru: {
     welcome: "Добро пожаловать! 🔬",
@@ -208,6 +214,9 @@ export const translations = {
     thesis_intro: "ВВЕДЕНИЕ: Цифровизация образования является приоритетом.",
     chapter1_title: "ГЛ 1. ТЕОРЕТИЧЕСКИЕ ОСНОВЫ",
     chapter2_title: "ГЛ 2. ТЕХНИЧЕСКАЯ АРХИТЕКТУРА",
-    chapter3_title: "ГЛ 3. СМАРТ ДИАГНОСТИКА"
+    chapter3_title: "ГЛ 3. СМАРТ ДИАГНОСТИКА",
+    ai_error_rate_limit: "Дневной лимит (20 запросов) исчерпан! Приходите завтра. ⏳",
+    ai_error_key: "API ключ отсутствует. Проверьте настройки. 🔑",
+    ai_error_general: "ИИ сейчас занят. Попробуйте позже. 🌐"
   }
 };

@@ -10,34 +10,46 @@ interface ProfessorSparkProps {
 }
 
 const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
-  const t = translations[lang];
+  const t = translations[lang] as any;
   const [message, setMessage] = useState<string>('');
   const [isThinking, setIsThinking] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const getSparkMessage = async () => {
+  const getSparkMessage = async (forceNew = false) => {
     if (subject === Subject.HOME) {
       setMessage(t.placeholder_spark);
       return;
     }
 
+    // Keshni tekshirish
+    const cacheKey = `spark_fact_${subject}_${lang}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached && !forceNew) {
+      setMessage(cached);
+      return;
+    }
+
     setIsThinking(true);
     try {
-      // Create a new instance right before making an API call to ensure it uses the correct API key
+      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Short science fun fact about ${subject} in ${lang}. 1 sentence + emojis.`;
       
-      // Update model to gemini-3-flash-preview and use string prompt directly
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptText,
       });
       
-      // Access response text property directly
-      setMessage(response.text || "Ilm-fan yo'li - nurli yo'l! ✨");
+      const result = response.text || "Ilm-fan yo'li - nurli yo'l! ✨";
+      setMessage(result);
+      localStorage.setItem(cacheKey, result);
     } catch (err: any) {
       console.error("Spark AI Error:", err);
-      setMessage("Izlanishdan to'xtama! 🌟");
+      if (err.message?.includes('429')) {
+        setMessage(t.ai_error_rate_limit);
+      } else {
+        setMessage("Izlanishdan to'xtama! 🌟");
+      }
     } finally {
       setIsThinking(false);
     }
@@ -67,12 +79,14 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
               </div>
             ) : message}
           </div>
-          <button 
-            onClick={() => getSparkMessage()}
-            className="mt-4 text-[10px] font-black text-sky-500 hover:text-sky-700 underline uppercase tracking-widest"
-          >
-            {lang === 'uz' ? 'Yana maslahat?' : 'Another tip?'}
-          </button>
+          {!isThinking && subject !== Subject.HOME && (
+            <button 
+              onClick={() => getSparkMessage(true)}
+              className="mt-4 text-[10px] font-black text-sky-500 hover:text-sky-700 underline uppercase tracking-widest"
+            >
+              {lang === 'uz' ? 'Yana maslahat?' : 'Another tip?'}
+            </button>
+          )}
         </div>
       )}
       <button

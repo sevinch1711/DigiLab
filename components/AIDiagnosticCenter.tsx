@@ -66,6 +66,7 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
     setReport(null);
 
     try {
+      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Analyze this ${subject} screenshot for a young student. Provide an encouraging scientific analysis. Language: ${lang}.`;
 
@@ -104,9 +105,9 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       }
     } catch (err: any) {
       console.error("AI Analysis Error:", err);
-      let errorMsg = "Tizimda xatolik yuz berdi. 🌐";
-      if (err.message?.includes('429')) errorMsg = "Sizda limit tugagan. Bir ozdan so'ng urinib ko'ring! ⏳";
-      if (err.message?.includes('API key')) errorMsg = "API kalitingiz noto'g'ri. 🔑";
+      let errorMsg = t.ai_error_general;
+      if (err.message?.includes('429')) errorMsg = t.ai_error_rate_limit;
+      if (err.message?.includes('API key')) errorMsg = t.ai_error_key;
       setReport({ error: errorMsg });
     } finally {
       setIsAnalyzing(false);
@@ -153,8 +154,8 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
             {report.error ? (
                <div className="p-10 bg-rose-500/10 border-2 border-rose-500/20 rounded-[48px] text-rose-200 font-bold text-center flex flex-col items-center gap-4">
                   <span className="text-5xl">⚠️</span>
-                  {report.error}
-                  <button onClick={() => analyzeImage()} className="text-[10px] uppercase tracking-widest text-white bg-rose-500 px-4 py-2 rounded-full mt-2">Qayta urinish</button>
+                  <p className="text-sm">{report.error}</p>
+                  <button onClick={() => analyzeImage()} className="text-[10px] uppercase tracking-widest text-white bg-rose-500 px-6 py-2 rounded-full mt-2 hover:bg-rose-600 transition-colors">Qayta urinish</button>
                </div>
             ) : (
               <>

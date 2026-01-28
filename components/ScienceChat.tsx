@@ -17,55 +17,61 @@ interface Message {
 
 const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   const t = translations[lang] as any;
-  const [messages, setMessages] = useState<Message[]>([{ role: 'model', text: t.placeholder_spark }]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem(`chat_history_${subject}_${lang}`);
+    // Explicitly define role as const to avoid type inference issues from JSON.parse or t variable
+    return saved ? JSON.parse(saved) : [{ role: 'model' as const, text: t.placeholder_spark }];
+  });
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const chatCache = useRef<Record<string, string>>({});
 
+  // Xabarlarni saqlash
   useEffect(() => {
+    localStorage.setItem(`chat_history_${subject}_${lang}`, JSON.stringify(messages));
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
+  }, [messages, subject, lang]);
 
   const handleSend = async () => {
     if (!input.trim() || isThinking) return;
     const userMsg = input.trim();
     
-    // Use process.env.API_KEY directly as per SDK guidelines
-    const cacheKey = `${subject}-${lang}-${userMsg.toLowerCase()}`;
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    
-    if (chatCache.current[cacheKey]) {
-      setMessages(prev => [...prev, { role: 'model', text: chatCache.current[cacheKey], isCached: true }]);
-      return;
-    }
+    // Explicitly type newMessages array to ensure literal types are preserved
+    const newMessages: Message[] = [...messages, { role: 'user' as const, text: userMsg }];
+    setMessages(newMessages);
 
     setIsThinking(true);
     try {
-      // Create new instance with direct API key from environment
+      // Fix: Use direct process.env.API_KEY initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Friendly mentor Prof. Spark. Brief answer for a kid about ${subject} in ${lang}. User asks: ${userMsg}`;
 
-      // Update model to gemini-3-flash-preview for optimal text conversation performance
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptText,
       });
 
-      // Extract text directly from property
-      const botResponse = response.text || "Tushunmadim, qaytadan yozing.";
-      chatCache.current[cacheKey] = botResponse;
-      setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
+      const botResponse = response.text || (lang === 'uz' ? "Kechirasiz, javob topolmadim." : "Sorry, no answer.");
+      // Use as const for the role literal to match Message interface exactly
+      setMessages(prev => [...prev, { role: 'model' as const, text: botResponse }]);
     } catch (err: any) {
       console.error("Chat Error:", err);
-      let errorText = "Hozircha javob bera olmayman. Bir ozdan so'ng kuting! ⏳";
-      if (err.message?.includes('API key')) errorText = "API kalitingizda xatolik bor! 🔑";
-      setMessages(prev => [...prev, { role: 'model', text: errorText }]);
+      let errorText = t.ai_error_general;
+      if (err.message?.includes('429')) errorText = t.ai_error_rate_limit;
+      // Use as const for the role literal
+      setMessages(prev => [...prev, { role: 'model' as const, text: errorText }]);
     } finally {
       setIsThinking(false);
     }
+  };
+
+  const clearChat = () => {
+    // Fix: Explicitly type reset array and use as const for the role literal to resolve TypeScript error on line 67
+    const reset: Message[] = [{ role: 'model' as const, text: t.placeholder_spark }];
+    setMessages(reset);
+    localStorage.removeItem(`chat_history_${subject}_${lang}`);
   };
 
   return (
@@ -77,7 +83,10 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
               <span className="text-2xl">👨‍🏫</span>
               <span className="font-black text-[10px] uppercase tracking-[0.2em]">{t.chat_title}</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
+            <div className="flex gap-2">
+              <button onClick={clearChat} title="Tozalash" className="bg-white/10 w-8 h-8 rounded-full flex items-center justify-center text-xs">🗑️</button>
+              <button onClick={() => setIsOpen(false)} className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
+            </div>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-sky-50/20 min-h-[350px]">
@@ -86,7 +95,6 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
                 <div className={`max-w-[85%] p-4 rounded-3xl text-sm font-bold shadow-md border-2 ${m.role === 'user' ? 'bg-sky-600 text-white border-sky-700 rounded-tr-none' : 'bg-white text-slate-900 border-sky-100 rounded-tl-none'}`}>
                   {m.text}
                 </div>
-                {m.isCached && <span className="text-[8px] font-black text-sky-400 uppercase tracking-widest mt-1 ml-2">Eco-Mode ⚡</span>}
               </div>
             ))}
             {isThinking && (
