@@ -30,12 +30,14 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
   const generateScientificReport = async () => {
     setIsGenerating(true);
     try {
+      // Re-initialize for each request to ensure valid environment access
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Profile: ${stats.userName}, XP: ${stats.points}. Write a 2-sentence encouraging academic summary in ${lang}.`;
 
+      // Use gemini-3-flash-preview for academic summarization tasks
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: { parts: [{ text: promptText }] },
+        model: 'gemini-3-flash-preview',
+        contents: promptText,
       });
       
       const result = response.text || "Report unavailable.";
@@ -66,7 +68,7 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
           </div>
         ) : (
           <p className="text-slate-500 font-bold leading-relaxed max-w-sm">
-            Tizim kashfiyotlar xaritangizni tahlil qilmoqda. Gemini Flash (Free Tier) orqali optimallashtirilgan.
+            Tizim kashfiyotlar xaritangizni tahlil qilmoqda. Gemini-3-flash orqali optimallashtirilgan.
           </p>
         )}
         

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import { Subject, Language } from '../types';
 import { translations } from '../translations';
 
@@ -61,35 +61,40 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
 
   const analyzeImage = async () => {
     if (!image) return;
-    const apiKey = process.env.API_KEY || (process.env as any).VITE_GEMINI_API_KEY;
     
-    if (!apiKey) {
-      setReport({ error: "Vercel'da API_KEY topilmadi! 🔑" });
-      return;
-    }
-
     setIsAnalyzing(true);
     setReport(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      const promptText = `Analyze this ${subject} screenshot for a young student. 
-      Return ONLY a JSON object: {"observation": "...", "scientific_secret": "...", "hint": "...", "mission": "...", "irt_score": -3 to 3}. 
-      Language: ${lang}. Be very encouraging.`;
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const promptText = `Analyze this ${subject} screenshot for a young student. Provide an encouraging scientific analysis. Language: ${lang}.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { text: promptText },
             { inlineData: { mimeType: 'image/jpeg', data: image.split(',')[1] } }
           ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              observation: { type: Type.STRING, description: "Detailed observation of the student's lab work." },
+              scientific_secret: { type: Type.STRING, description: "A fun scientific fact related to the observation." },
+              hint: { type: Type.STRING, description: "A helpful hint for further exploration." },
+              mission: { type: Type.STRING, description: "A small challenge for the student." },
+              irt_score: { type: Type.NUMBER, description: "Academic performance score from -3 to 3." }
+            },
+            required: ["observation", "scientific_secret", "hint", "mission", "irt_score"]
+          }
         }
       });
 
-      const text = response.text || "{}";
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsedReport = JSON.parse(cleanJson);
+      const jsonStr = response.text || "{}";
+      const parsedReport = JSON.parse(jsonStr);
       
       setReport(parsedReport);
       localStorage.setItem(`diag_cache_${subject}_${lang}`, JSON.stringify(parsedReport));
@@ -99,9 +104,9 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       }
     } catch (err: any) {
       console.error("AI Analysis Error:", err);
-      let errorMsg = "Tizim ulanishda xatolik. 🌐";
-      if (err.message?.includes('429')) errorMsg = "Limit tugadi. 1 daqiqa kuting! ⏳";
-      if (err.message?.includes('API key')) errorMsg = "API kaliti noto'g'ri! 🔑";
+      let errorMsg = "Tizimda xatolik yuz berdi. 🌐";
+      if (err.message?.includes('429')) errorMsg = "Sizda limit tugagan. Bir ozdan so'ng urinib ko'ring! ⏳";
+      if (err.message?.includes('API key')) errorMsg = "API kalitingiz noto'g'ri. 🔑";
       setReport({ error: errorMsg });
     } finally {
       setIsAnalyzing(false);
@@ -116,7 +121,7 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
              <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-[32px] flex items-center justify-center text-4xl shadow-lg animate-float">👨‍🏫</div>
              <div>
                 <h3 className="text-3xl font-black text-white font-whimsical uppercase tracking-tight">{t.ai_diagnostic_title}</h3>
-                <p className="text-indigo-400/50 font-black text-[10px] uppercase tracking-[0.4em]">Gemini 1.5 Flash Mode</p>
+                <p className="text-indigo-400/50 font-black text-[10px] uppercase tracking-[0.4em]">Gemini AI Intelligence</p>
              </div>
           </div>
           
@@ -149,7 +154,6 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
                <div className="p-10 bg-rose-500/10 border-2 border-rose-500/20 rounded-[48px] text-rose-200 font-bold text-center flex flex-col items-center gap-4">
                   <span className="text-5xl">⚠️</span>
                   {report.error}
-                  <p className="text-[10px] opacity-60">Vercel Dashboard > Settings > Environment Variables > API_KEY</p>
                   <button onClick={() => analyzeImage()} className="text-[10px] uppercase tracking-widest text-white bg-rose-500 px-4 py-2 rounded-full mt-2">Qayta urinish</button>
                </div>
             ) : (

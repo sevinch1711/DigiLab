@@ -31,14 +31,8 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
   const handleSend = async () => {
     if (!input.trim() || isThinking) return;
     const userMsg = input.trim();
-    const apiKey = process.env.API_KEY || (process.env as any).VITE_GEMINI_API_KEY;
     
-    if (!apiKey) {
-      setMessages(prev => [...prev, { role: 'user', text: userMsg }, { role: 'model', text: "API kaliti (API_KEY) o'rnatilmagan! 🔑" }]);
-      setInput('');
-      return;
-    }
-
+    // Use process.env.API_KEY directly as per SDK guidelines
     const cacheKey = `${subject}-${lang}-${userMsg.toLowerCase()}`;
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
@@ -50,20 +44,23 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
 
     setIsThinking(true);
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      // Create new instance with direct API key from environment
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Friendly mentor Prof. Spark. Brief answer for a kid about ${subject} in ${lang}. User asks: ${userMsg}`;
 
+      // Update model to gemini-3-flash-preview for optimal text conversation performance
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: { parts: [{ text: promptText }] },
+        model: 'gemini-3-flash-preview',
+        contents: promptText,
       });
 
+      // Extract text directly from property
       const botResponse = response.text || "Tushunmadim, qaytadan yozing.";
       chatCache.current[cacheKey] = botResponse;
       setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
     } catch (err: any) {
       console.error("Chat Error:", err);
-      let errorText = "Hozir limitdaman. Bir ozdan so'ng savol bering! ⏳";
+      let errorText = "Hozircha javob bera olmayman. Bir ozdan so'ng kuting! ⏳";
       if (err.message?.includes('API key')) errorText = "API kalitingizda xatolik bor! 🔑";
       setMessages(prev => [...prev, { role: 'model', text: errorText }]);
     } finally {

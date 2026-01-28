@@ -2,14 +2,17 @@
 import React from 'react';
 import { Subject, UserStats, Language } from '../types';
 import { translations } from '../translations';
+import ResearchIntelligence from './ResearchIntelligence';
 
+// Added missing onSelectExperiment to DashboardProps to fix TS errors in App.tsx
 interface DashboardProps {
   onSelectLab: (subject: Subject) => void;
+  onSelectExperiment: (subject: Subject, expId: string) => void;
   stats: UserStats;
   lang: Language;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onSelectLab, stats, lang }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onSelectLab, onSelectExperiment, stats, lang }) => {
   const t = translations[lang];
 
   const worlds = [
@@ -18,92 +21,108 @@ const Dashboard: React.FC<DashboardProps> = ({ onSelectLab, stats, lang }) => {
       title: t.biology,
       icon: '🌿',
       color: 'from-green-400 to-emerald-600',
-      description: lang === 'uz' ? "Hayot mo'jizalarini kashf et!" : "Discover the miracles of life!"
+      motivation: (t as any).bio_motivation,
+      glow: 'shadow-emerald-500/20'
     },
     {
       subject: Subject.CHEMISTRY,
       title: t.chemistry,
       icon: '🧪',
       color: 'from-pink-400 to-rose-600',
-      description: lang === 'uz' ? "Rangli reaksiyalar dunyosi!" : "The world of colorful reactions!"
+      motivation: (t as any).chem_motivation,
+      glow: 'shadow-rose-500/20'
     },
     {
       subject: Subject.PHYSICS,
       title: t.physics,
       icon: '🌌',
       color: 'from-sky-400 to-blue-600',
-      description: lang === 'uz' ? "Kuch va harakat qonunlari!" : "Laws of force and motion!"
+      motivation: (t as any).phys_motivation,
+      glow: 'shadow-sky-500/20'
     },
     {
       subject: Subject.INFORMATICS,
       title: t.informatics,
-      icon: '🤖',
+      icon: '💻',
       color: 'from-indigo-400 to-purple-600',
-      description: lang === 'uz' ? "Robotlar va kodlar olami!" : "The world of robots and code!"
+      motivation: (t as any).info_motivation,
+      glow: 'shadow-indigo-500/20'
     }
   ];
 
+  const currentRank = fullLeaderboardRank(stats);
+
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+      
+      {/* 1. Subjects Grid - Main focus */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {worlds.map((world) => (
-          <div 
-            key={world.subject}
-            className="group relative bg-white rounded-[40px] p-8 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-transparent hover:border-sky-200 h-[380px] flex flex-col"
-          >
-            <div className={`absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br ${world.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
-            
-            <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${world.color} flex items-center justify-center text-5xl text-white mb-6 shadow-lg group-hover:rotate-6 transition-transform`}>
-              {world.icon}
+        {worlds.map((world) => {
+          const mastery = stats.subjectAnalytics[world.subject].masteryLevel;
+          return (
+            <div key={world.subject} className="bg-white rounded-[48px] p-8 shadow-xl border-2 border-transparent hover:border-slate-100 transition-all flex flex-col group h-[420px] transform hover:-translate-y-2 duration-500 relative">
+              <div className="flex justify-between items-start mb-6">
+                <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${world.color} flex items-center justify-center text-4xl text-white shadow-lg group-hover:rotate-6 transition-transform`}>
+                  {world.icon}
+                </div>
+                <div className="text-right">
+                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth Path</span>
+                  <div className="flex gap-1 mt-1 justify-end">
+                    {[1, 2, 3, 4, 5].map(dot => (
+                      <div key={dot} className={`w-1.5 h-1.5 rounded-full transition-all ${dot <= mastery ? 'bg-emerald-400 scale-125 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-slate-100'}`}></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-black text-slate-900 mb-4 font-whimsical uppercase tracking-tighter">{world.title}</h3>
+              <p className="text-slate-500 font-bold text-sm mb-6 flex-grow leading-relaxed">
+                {world.motivation}
+              </p>
+
+              <div className="h-1.5 w-full bg-slate-50 rounded-full mb-8 overflow-hidden">
+                <div className={`h-full rounded-full bg-gradient-to-r ${world.color} transition-all duration-1000`} style={{width: `${(mastery / 5) * 100}%`}}></div>
+              </div>
+
+              <button 
+                onClick={() => onSelectLab(world.subject)}
+                className="w-full py-5 bg-[#007AFF] text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-lg active:scale-95"
+              >
+                {t.enterLab}
+              </button>
             </div>
-
-            <h3 className="text-2xl font-black text-sky-900 mb-2 font-whimsical uppercase tracking-tight">{world.title}</h3>
-            <p className="text-sky-500 font-bold text-sm mb-8 flex-grow leading-relaxed">{world.description}</p>
-
-            <button
-              onClick={() => onSelectLab(world.subject)}
-              className="w-full py-5 bg-sky-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-sky-800 transition-all shadow-lg hover:shadow-sky-200 active:scale-95"
-            >
-              {t.enterLab}
-            </button>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      <section className="bg-gradient-to-br from-indigo-900 to-sky-800 p-10 rounded-[60px] text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px'}}></div>
-        <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
-          <div className="flex-1">
-            <h2 className="text-3xl font-black mb-6 font-whimsical tracking-tight flex items-center gap-3">
-              <span className="text-4xl">💎</span> {t.achievements}
-            </h2>
-            <div className="flex flex-wrap gap-4">
-              {stats.badges.length === 0 ? (
-                <div className="p-10 bg-white/5 border border-white/10 rounded-[40px] w-full text-center group hover:bg-white/10 transition-colors cursor-default">
-                  <span className="text-5xl block mb-4 opacity-30 group-hover:scale-110 transition-transform">📦</span>
-                  <p className="font-bold opacity-40">{t.noBadges}</p>
-                </div>
-              ) : (
-                stats.badges.map(b => (
-                  <div key={b.id} className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-[32px] border border-white/20 flex items-center justify-center text-5xl hover:scale-110 hover:-rotate-6 transition-all cursor-pointer shadow-xl" title={b.name}>
-                    {b.icon}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="w-full md:w-80 bg-white/10 backdrop-blur-xl p-8 rounded-[40px] border border-white/20 shadow-2xl animate-float">
-            <h4 className="text-xs font-black uppercase tracking-widest text-sky-300 mb-2">{t.factTitle} 🧪</h4>
-            <p className="text-lg font-bold italic leading-relaxed">
-              {lang === 'uz' 
-                ? "Daraxtlar bir yilda o'rtacha 120 kg kislorod ishlab chiqaradi! 🌳"
-                : "A single tree produces about 120 kg of oxygen per year! 🌳"}
-            </p>
-          </div>
+      {/* 2. Research Intelligence Center */}
+      <ResearchIntelligence stats={stats} lang={lang} />
+
+      {/* 3. Global Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[48px] border border-white shadow-xl flex items-center gap-6 group hover:scale-[1.02] transition-transform">
+           <div className="w-16 h-16 bg-yellow-100 rounded-3xl flex items-center justify-center text-3xl shadow-sm group-hover:rotate-12 transition-transform">🥇</div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.rank}</p>
+              <h4 className="text-2xl font-black text-slate-900">#{currentRank}</h4>
+           </div>
         </div>
-      </section>
+        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[48px] border border-white shadow-xl flex items-center gap-6 group hover:scale-[1.02] transition-transform col-span-1 md:col-span-2">
+           <div className="w-16 h-16 bg-blue-100 rounded-3xl flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">💡</div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inspiration</p>
+              <h4 className="text-xl font-black text-slate-700 italic">{t.motivation}</h4>
+           </div>
+        </div>
+      </div>
     </div>
   );
 };
+
+function fullLeaderboardRank(stats: UserStats) {
+  const mockScores = [12450, 11200, 8900];
+  const rank = mockScores.filter(s => s > stats.points).length + 1;
+  return rank;
+}
 
 export default Dashboard;

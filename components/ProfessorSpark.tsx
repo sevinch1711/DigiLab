@@ -23,14 +23,17 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
 
     setIsThinking(true);
     try {
+      // Create a new instance right before making an API call to ensure it uses the correct API key
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Short science fun fact about ${subject} in ${lang}. 1 sentence + emojis.`;
       
+      // Update model to gemini-3-flash-preview and use string prompt directly
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: { parts: [{ text: promptText }] },
+        model: 'gemini-3-flash-preview',
+        contents: promptText,
       });
       
+      // Access response text property directly
       setMessage(response.text || "Ilm-fan yo'li - nurli yo'l! ✨");
     } catch (err: any) {
       console.error("Spark AI Error:", err);
