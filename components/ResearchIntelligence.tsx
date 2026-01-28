@@ -31,7 +31,7 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
     setIsGenerating(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const promptText = `Profile: ${stats.userName}, XP: ${stats.points}. Write a 2-sentence encouraging academic summary in ${lang} as a wise professor. Do not mention AI or bots.`;
+      const promptText = `Profile: ${stats.userName}, XP: ${stats.points}. Write a 2-sentence encouraging summary in ${lang} as Professor Spark.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -50,32 +50,20 @@ const ResearchIntelligence: React.FC<ResearchIntelligenceProps> = ({ stats, lang
   };
 
   return (
-    <div className={`bg-white/80 backdrop-blur-2xl rounded-[60px] p-10 border-2 border-white shadow-2xl transition-all duration-1000 flex flex-col lg:flex-row gap-12 items-center overflow-hidden relative group`}>
+    <div className={`bg-white/80 backdrop-blur-2xl rounded-[60px] p-10 border-2 border-white shadow-2xl flex flex-col lg:flex-row gap-12 items-center overflow-hidden relative group`}>
       <div className="flex-1 space-y-6 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="inline-block px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-indigo-100">
-            {t.analytics_title}
-          </div>
-        </div>
         <h2 className="text-4xl font-black text-slate-900 font-whimsical tracking-tight leading-none">Research <br/> Intelligence</h2>
         
         {aiReport ? (
           <div className="bg-indigo-50 p-6 rounded-[32px] border border-indigo-100 animate-in slide-in-from-left-4 duration-500">
             <p className="text-indigo-900 font-bold italic text-sm leading-relaxed">"{aiReport}"</p>
-            <button onClick={() => setAiReport(null)} className="mt-4 text-[8px] font-black uppercase tracking-widest text-indigo-400">✕ Tozalash</button>
+            <button onClick={() => setAiReport(null)} className="mt-4 text-[8px] font-black uppercase tracking-widest text-indigo-400">✕ Clear</button>
           </div>
         ) : (
           <p className="text-slate-500 font-bold leading-relaxed max-w-sm">
-            Professor Spark sizning kashfiyotlar xaritangizni tahlil qilmoqda. Bilimlaringiz doirasini ko'rish uchun hisobotni bosing.
+            Professor Spark analyzes your discovery map. Click the button to see your research profile.
           </p>
         )}
-        
-        <div className="pt-4 flex flex-wrap gap-4">
-          <div className="p-4 bg-slate-50 rounded-3xl border border-slate-100 min-w-[120px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.mastery}</p>
-            <p className="text-2xl font-black text-indigo-600">{(stats.points / 100).toFixed(1)}</p>
-          </div>
-        </div>
 
         {!aiReport && (
           <button onClick={generateScientificReport} disabled={isGenerating} className="w-full lg:w-auto px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg disabled:opacity-50">

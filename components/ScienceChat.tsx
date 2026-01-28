@@ -41,8 +41,8 @@ const ScienceChat: React.FC<ScienceChatProps> = ({ subject, lang }) => {
     setIsThinking(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Free tier uchun eng yuqori RPM model: gemini-flash-lite-latest
-      const promptText = `Roleplay as Professor Spark for ${subject} in ${lang}. Be encouraging, brief (max 2 sentences). User: ${userMsg}`;
+      // High RPM model for smooth chat experience
+      const promptText = `Roleplay as Professor Spark for ${subject} in ${lang}. Be encouraging, brief (max 2 sentences). User says: ${userMsg}`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-flash-lite-latest',

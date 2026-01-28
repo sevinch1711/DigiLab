@@ -67,7 +67,6 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Vizual tahlil uchun eng so'nggi va tushunish qobiliyati yuqori model
       const promptText = `Analyze this ${subject} screenshot for a young student. Provide an encouraging scientific analysis. Language: ${lang}.`;
 
       const response = await ai.models.generateContent({
@@ -83,20 +82,18 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              observation: { type: Type.STRING, description: "Detailed observation of the student's lab work." },
-              scientific_secret: { type: Type.STRING, description: "A fun scientific fact related to the observation." },
-              hint: { type: Type.STRING, description: "A helpful hint for further exploration." },
-              mission: { type: Type.STRING, description: "A small challenge for the student." },
-              irt_score: { type: Type.NUMBER, description: "Academic performance score from -3 to 3." }
+              observation: { type: Type.STRING },
+              scientific_secret: { type: Type.STRING },
+              hint: { type: Type.STRING },
+              mission: { type: Type.STRING },
+              irt_score: { type: Type.NUMBER }
             },
             required: ["observation", "scientific_secret", "hint", "mission", "irt_score"]
           }
         }
       });
 
-      const jsonStr = response.text || "{}";
-      const parsedReport = JSON.parse(jsonStr);
-      
+      const parsedReport = JSON.parse(response.text || "{}");
       setReport(parsedReport);
       localStorage.setItem(`diag_cache_${subject}_${lang}`, JSON.stringify(parsedReport));
 
@@ -107,7 +104,6 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
       console.error("AI Analysis Error:", err);
       let errorMsg = t.ai_error_general;
       if (err.message?.includes('429')) errorMsg = t.ai_error_rate_limit;
-      if (err.message?.includes('API key')) errorMsg = t.ai_error_key;
       setReport({ error: errorMsg });
     } finally {
       setIsAnalyzing(false);
@@ -152,10 +148,8 @@ const AIDiagnosticCenter: React.FC<AIDiagnosticCenterProps> = ({ subject, lang, 
         {report && (
           <div className="w-full lg:w-[500px] space-y-6 animate-in slide-in-from-right-8 duration-700">
             {report.error ? (
-               <div className="p-10 bg-rose-500/10 border-2 border-rose-500/20 rounded-[48px] text-rose-200 font-bold text-center flex flex-col items-center gap-4">
-                  <span className="text-5xl">⚠️</span>
+               <div className="p-10 bg-rose-500/10 border-2 border-rose-500/20 rounded-[48px] text-rose-200 font-bold text-center">
                   <p className="text-sm">{report.error}</p>
-                  <button onClick={() => analyzeImage()} className="text-[10px] uppercase tracking-widest text-white bg-rose-500 px-6 py-2 rounded-full mt-2 hover:bg-rose-600 transition-colors">Qayta urinish</button>
                </div>
             ) : (
               <>

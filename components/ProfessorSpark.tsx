@@ -30,9 +30,10 @@ const ProfessorSpark: React.FC<ProfessorSparkProps> = ({ subject, lang }) => {
 
     setIsThinking(true);
     try {
+      // Create new instance to ensure up-to-date API key context
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Free Tier uchun eng yuqori RPM (10) model: gemini-flash-lite-latest
-      const promptText = `Provide 1 very short, exciting science fact or tip about ${subject} in ${lang}. Max 12 words. Use 1 emoji. Be unique.`;
+      // Free Tier RPM 10 model
+      const promptText = `Provide 1 short, exciting science fact about ${subject} in ${lang}. Max 12 words. Use 1 emoji.`;
       
       const response = await ai.models.generateContent({
         model: 'gemini-flash-lite-latest',
