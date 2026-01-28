@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Subject, UserStats, Badge, Language, SubjectStats } from './types';
 import Sidebar from './components/Sidebar';
-import Dashboard from './Dashboard';
+import Dashboard from './components/Dashboard'; // Yo'lni aniqlashtirdik
 import Leaderboard from './Leaderboard';
 import AboutPage from './components/AboutPage';
 import BiologyLab from './labs/BiologyLab';
@@ -80,17 +80,14 @@ const App: React.FC = () => {
   };
 
   const updateIRTFromDiagnostic = (subject: Subject, irtStr: string) => {
-    // Extract numerical value from string like "+1.2"
     const score = parseFloat(irtStr.replace(/[^-0.9.]/g, ''));
     if (isNaN(score)) return;
 
-    // Map IRT (-3 to +3) to Mastery Level (1 to 5)
-    // Formula: level = ((score + 3) / 6) * 4 + 1
     const newMastery = Math.min(5, Math.max(1, Math.round(((score + 3) / 6) * 4 + 1)));
     
     setStats(prev => ({
       ...prev,
-      points: prev.points + 25, // Reward for diagnostic
+      points: prev.points + 25,
       subjectAnalytics: {
         ...prev.subjectAnalytics,
         [subject]: {
