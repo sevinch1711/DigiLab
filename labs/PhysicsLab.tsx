@@ -3,16 +3,19 @@ import React, { useState } from 'react';
 import { Badge, Language, Subject, QuestionPool } from '../types';
 import { translations } from '../translations';
 import CatAssessment from '../components/CatAssessment';
+import AIDiagnosticCenter from '../components/AIDiagnosticCenter';
 
 interface PhysicsLabProps {
   experimentId: string | null;
   onSelectExp: (id: string) => void;
-  onComplete: () => void;
+  onComplete: (level: number) => void;
   onEarnBadge: (badge: Badge) => void;
+  // Added onDiagnosticComplete to fix TypeScript error in App.tsx
+  onDiagnosticComplete?: (irt: string) => void;
   lang: Language;
 }
 
-const PhysicsLab: React.FC<PhysicsLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, lang }) => {
+const PhysicsLab: React.FC<PhysicsLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, onDiagnosticComplete, lang }) => {
   const t = translations[lang];
   const [showAssessment, setShowAssessment] = useState(false);
   const [showTheory, setShowTheory] = useState(false);
@@ -50,6 +53,10 @@ const PhysicsLab: React.FC<PhysicsLabProps> = ({ experimentId, onSelectExp, onCo
             <p className="text-slate-400 font-bold">Laboratoriya tajribasini tanlang</p>
           </div>
         </div>
+
+        {/* AI Diagnostic Center - Passing the diagnostic callback */}
+        <AIDiagnosticCenter subject={Subject.PHYSICS} lang={lang} onDiagnosticComplete={onDiagnosticComplete} />
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {experiments.map(exp => (
             <button 
@@ -90,7 +97,7 @@ const PhysicsLab: React.FC<PhysicsLabProps> = ({ experimentId, onSelectExp, onCo
         rewardBadge={badges[experimentId] || badges.exp1} 
         rewardXP={400} 
         subjectName={experiments.find(e => e.id === experimentId)?.title || "Physics"}
-        onSuccess={() => { onEarnBadge(badges[experimentId] || badges.exp1); onComplete(); }} 
+        onSuccess={(level) => { onEarnBadge(badges[experimentId] || badges.exp1); onComplete(level); }} 
       />
       
       <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-5 rounded-[32px] border border-white shadow-sm">

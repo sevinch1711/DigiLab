@@ -1,15 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Badge, Language, Subject, QuestionPool } from '../types';
 import { translations } from '../translations';
 import CatAssessment from '../components/CatAssessment';
+import AIDiagnosticCenter from '../components/AIDiagnosticCenter';
 
-// --- Missing Informatics Components Implementation ---
+// --- Informatics Components ---
 
 const SortingVisualizer: React.FC = () => {
-  const [array, setArray] = useState([40, 10, 30, 20, 50]);
+  const initialArray = [40, 10, 30, 20, 50];
+  const [array, setArray] = useState(initialArray);
   const sort = () => setArray([...array].sort((a, b) => a - b));
   const shuffle = () => setArray([...array].sort(() => Math.random() - 0.5));
+  const restore = () => setArray(initialArray);
   
   return (
     <div className="bg-white p-8 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center animate-in fade-in zoom-in duration-500">
@@ -23,6 +26,7 @@ const SortingVisualizer: React.FC = () => {
         ))}
       </div>
       <div className="flex gap-4">
+        <button onClick={restore} className="px-6 py-3 bg-rose-50 text-rose-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all active:scale-95" title="Restore Default">🔄</button>
         <button onClick={shuffle} className="px-8 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all">Shuffle</button>
         <button onClick={sort} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-700 transition-all active:scale-95">Sort Array</button>
       </div>
@@ -133,17 +137,22 @@ const SQLExplorer: React.FC = () => {
 };
 
 const BinaryChallenge: React.FC = () => {
-  const [bits, setBits] = useState([0, 1, 0, 1, 0, 0, 0, 0]);
+  const initialBits = [0, 1, 0, 1, 0, 0, 0, 0];
+  const [bits, setBits] = useState(initialBits);
   const toggleBit = (idx: number) => {
     const newBits = [...bits];
     newBits[idx] = newBits[idx] === 0 ? 1 : 0;
     setBits(newBits);
   };
+  const restore = () => setBits(initialBits);
   const decimal = bits.slice().reverse().reduce((acc, bit, i) => acc + (bit * Math.pow(2, i)), 0);
 
   return (
     <div className="bg-white p-10 rounded-[40px] border-4 border-indigo-50 shadow-xl flex flex-col items-center animate-in fade-in duration-500">
-      <h3 className="text-xl font-black text-indigo-900 mb-8 uppercase tracking-tight">Binary to Decimal</h3>
+      <div className="w-full flex justify-between items-center mb-8">
+        <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight">Binary to Decimal</h3>
+        <button onClick={restore} className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 active:scale-90 transition-all">🔄</button>
+      </div>
       <div className="flex gap-3 mb-10 flex-wrap justify-center">
         {bits.map((b, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
@@ -237,16 +246,17 @@ const HexColorLogic: React.FC = () => {
 
 // --- Main InformaticsLab Component ---
 
-// Define InformaticsLabProps interface to fix missing name error
 interface InformaticsLabProps {
   experimentId: string | null;
   onSelectExp: (id: string) => void;
-  onComplete: () => void;
+  onComplete: (level: number) => void;
   onEarnBadge: (badge: Badge) => void;
+  // Added onDiagnosticComplete to fix TypeScript error in App.tsx
+  onDiagnosticComplete?: (irt: string) => void;
   lang: Language;
 }
 
-const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, lang }) => {
+const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, onDiagnosticComplete, lang }) => {
   const t = translations[lang];
   const [showAssessment, setShowAssessment] = useState(false);
   const [showTheory, setShowTheory] = useState(false);
@@ -272,6 +282,10 @@ const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectE
             <p className="text-slate-400 font-bold">Laboratoriya tajribasini tanlang</p>
           </div>
         </div>
+        
+        {/* AI Diagnostic Center - Passing the diagnostic callback */}
+        <AIDiagnosticCenter subject={Subject.INFORMATICS} lang={lang} onDiagnosticComplete={onDiagnosticComplete} />
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {experiments.map(exp => (
             <button key={exp.id} onClick={() => onSelectExp(exp.id)} className="group bg-white p-8 rounded-[40px] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all border-2 border-indigo-50 flex flex-col items-center">
@@ -293,7 +307,7 @@ const InformaticsLab: React.FC<InformaticsLabProps> = ({ experimentId, onSelectE
         rewardBadge={{ id: 'b', name: 'Info Wizard', description: 'Done', icon: '💻', subject: Subject.INFORMATICS }} 
         rewardXP={400} 
         subjectName={experiments.find(e => e.id === experimentId)?.title || "Informatics"}
-        onSuccess={() => { onEarnBadge({ id: 'b', name: 'Info Wizard', description: 'Done', icon: '💻', subject: Subject.INFORMATICS }); onComplete(); }} 
+        onSuccess={(level) => { onEarnBadge({ id: 'b', name: 'Info Wizard', description: 'Done', icon: '💻', subject: Subject.INFORMATICS }); onComplete(level); }} 
       />
       <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-5 rounded-[32px] border border-white shadow-sm">
         <button onClick={() => onSelectExp(null)} className="px-8 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">← Orqaga</button>

@@ -19,6 +19,24 @@ const defaultSubjectStats: SubjectStats = {
   weaknesses: []
 };
 
+const initialStats: UserStats = {
+  points: 0,
+  level: 1,
+  badges: [],
+  completedLabs: [],
+  subjectAnalytics: {
+    [Subject.BIOLOGY]: { ...defaultSubjectStats },
+    [Subject.CHEMISTRY]: { ...defaultSubjectStats },
+    [Subject.PHYSICS]: { ...defaultSubjectStats },
+    [Subject.INFORMATICS]: { ...defaultSubjectStats },
+    [Subject.HOME]: { ...defaultSubjectStats },
+    [Subject.LEADERBOARD]: { ...defaultSubjectStats },
+    [Subject.ABOUT]: { ...defaultSubjectStats }
+  },
+  isRegistered: false,
+  userName: ''
+};
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Subject>(Subject.HOME);
   const [activeExperimentId, setActiveExperimentId] = useState<string | null>(null);
@@ -27,23 +45,7 @@ const App: React.FC = () => {
   
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('digilab_stats');
-    return saved ? JSON.parse(saved) : {
-      points: 0,
-      level: 1,
-      badges: [],
-      completedLabs: [],
-      subjectAnalytics: {
-        [Subject.BIOLOGY]: { ...defaultSubjectStats },
-        [Subject.CHEMISTRY]: { ...defaultSubjectStats },
-        [Subject.PHYSICS]: { ...defaultSubjectStats },
-        [Subject.INFORMATICS]: { ...defaultSubjectStats },
-        [Subject.HOME]: { ...defaultSubjectStats },
-        [Subject.LEADERBOARD]: { ...defaultSubjectStats },
-        [Subject.ABOUT]: { ...defaultSubjectStats }
-      },
-      isRegistered: false,
-      userName: ''
-    };
+    return saved ? JSON.parse(saved) : initialStats;
   });
 
   useEffect(() => {
@@ -59,9 +61,44 @@ const App: React.FC = () => {
       return { ...prev, points: newPoints, level: newLevel };
     });
     
-    if (!stats.isRegistered && stats.points >= 250) {
+    if (!stats.isRegistered) {
       setShowRegistration(true);
     }
+  };
+
+  const updateSubjectMastery = (subject: Subject, masteryLevel: number) => {
+    setStats(prev => ({
+      ...prev,
+      subjectAnalytics: {
+        ...prev.subjectAnalytics,
+        [subject]: {
+          ...prev.subjectAnalytics[subject],
+          masteryLevel: Math.max(prev.subjectAnalytics[subject].masteryLevel, masteryLevel)
+        }
+      }
+    }));
+  };
+
+  const updateIRTFromDiagnostic = (subject: Subject, irtStr: string) => {
+    // Extract numerical value from string like "+1.2"
+    const score = parseFloat(irtStr.replace(/[^-0.9.]/g, ''));
+    if (isNaN(score)) return;
+
+    // Map IRT (-3 to +3) to Mastery Level (1 to 5)
+    // Formula: level = ((score + 3) / 6) * 4 + 1
+    const newMastery = Math.min(5, Math.max(1, Math.round(((score + 3) / 6) * 4 + 1)));
+    
+    setStats(prev => ({
+      ...prev,
+      points: prev.points + 25, // Reward for diagnostic
+      subjectAnalytics: {
+        ...prev.subjectAnalytics,
+        [subject]: {
+          ...prev.subjectAnalytics[subject],
+          masteryLevel: newMastery
+        }
+      }
+    }));
   };
 
   const addBadge = (badge: Badge) => {
@@ -76,12 +113,24 @@ const App: React.FC = () => {
           level: newLevel
         };
       });
+      if (!stats.isRegistered) {
+        setShowRegistration(true);
+      }
     }
   };
 
   const handleRegister = (name: string) => {
     setStats(prev => ({ ...prev, isRegistered: true, userName: name }));
     setShowRegistration(false);
+  };
+
+  const handleRestore = () => {
+    if (window.confirm(t.restore_confirm)) {
+      localStorage.removeItem('digilab_stats');
+      setStats(initialStats);
+      setActiveTab(Subject.HOME);
+      setActiveExperimentId(null);
+    }
   };
 
   const handleExperimentSelect = (subject: Subject, expId: string) => {
@@ -104,13 +153,13 @@ const App: React.FC = () => {
 
     switch (activeTab) {
       case Subject.BIOLOGY:
-        return <BiologyLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={() => addPoints(50)} onEarnBadge={addBadge} />;
+        return <BiologyLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.BIOLOGY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.BIOLOGY, irt)} />;
       case Subject.CHEMISTRY:
-        return <ChemistryLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={() => addPoints(50)} onEarnBadge={addBadge} />;
+        return <ChemistryLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.CHEMISTRY, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.CHEMISTRY, irt)} />;
       case Subject.PHYSICS:
-        return <PhysicsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={() => addPoints(50)} onEarnBadge={addBadge} />;
+        return <PhysicsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.PHYSICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.PHYSICS, irt)} />;
       case Subject.INFORMATICS:
-        return <InformaticsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={() => addPoints(50)} onEarnBadge={addBadge} />;
+        return <InformaticsLab experimentId={activeExperimentId} onSelectExp={(id) => setActiveExperimentId(id)} lang={lang} onComplete={(level) => { addPoints(50); updateSubjectMastery(Subject.INFORMATICS, level); }} onEarnBadge={addBadge} onDiagnosticComplete={(irt) => updateIRTFromDiagnostic(Subject.INFORMATICS, irt)} />;
       default:
         return <Dashboard onSelectLab={setActiveTab} onSelectExperiment={handleExperimentSelect} stats={stats} lang={lang} />;
     }
@@ -139,7 +188,15 @@ const App: React.FC = () => {
             <p className="text-slate-400 font-bold opacity-80">{t.explore}</p>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleRestore}
+              title={t.restore_btn}
+              className="w-12 h-12 flex items-center justify-center bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95"
+            >
+              🔄
+            </button>
+
             <div className="flex bg-white/60 backdrop-blur-md rounded-2xl p-1 shadow-sm border border-white/40">
               {(['uz', 'en', 'ru'] as Language[]).map(l => (
                 <button

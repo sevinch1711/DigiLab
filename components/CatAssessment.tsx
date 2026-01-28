@@ -6,7 +6,7 @@ interface CatAssessmentProps {
   isOpen: boolean;
   onClose: () => void;
   questionPool: QuestionPool;
-  onSuccess: () => void;
+  onSuccess: (level: number) => void;
   rewardBadge: Badge;
   rewardXP: number;
   subjectName: string;
@@ -112,7 +112,7 @@ const CatAssessment: React.FC<CatAssessmentProps> = ({ isOpen, onClose, question
   };
 
   const handleFinalize = () => {
-    onSuccess();
+    onSuccess(currentLevel);
     onClose();
     setCurrentLevel(3);
     setAttemptCount(0);

@@ -3,16 +3,18 @@ import React, { useState } from 'react';
 import { Badge, Language, Subject, QuestionPool } from '../types';
 import { translations } from '../translations';
 import CatAssessment from '../components/CatAssessment';
+import AIDiagnosticCenter from '../components/AIDiagnosticCenter';
 
 interface BiologyLabProps {
   experimentId: string | null;
   onSelectExp: (id: string) => void;
-  onComplete: () => void;
+  onComplete: (level: number) => void;
   onEarnBadge: (badge: Badge) => void;
+  onDiagnosticComplete?: (irt: string) => void;
   lang: Language;
 }
 
-const BiologyLab: React.FC<BiologyLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, lang }) => {
+const BiologyLab: React.FC<BiologyLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, onDiagnosticComplete, lang }) => {
   const t = translations[lang];
   const [showAssessment, setShowAssessment] = useState(false);
   const [showTheory, setShowTheory] = useState(false);
@@ -38,6 +40,10 @@ const BiologyLab: React.FC<BiologyLabProps> = ({ experimentId, onSelectExp, onCo
             <p className="text-slate-400 font-bold">Laboratoriya tajribasini tanlang</p>
           </div>
         </div>
+
+        {/* AI Diagnostic Center */}
+        <AIDiagnosticCenter subject={Subject.BIOLOGY} lang={lang} onDiagnosticComplete={onDiagnosticComplete} />
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {experiments.map(exp => (
             <button 
@@ -79,7 +85,7 @@ const BiologyLab: React.FC<BiologyLabProps> = ({ experimentId, onSelectExp, onCo
         rewardBadge={{ id: 'b', name: 'Bio Explorer', description: 'Biology expert', icon: '🌿', subject: Subject.BIOLOGY }} 
         rewardXP={400} 
         subjectName={experiments.find(e => e.id === experimentId)?.title || "Biology"}
-        onSuccess={() => { onEarnBadge({ id: 'b', name: 'Bio Explorer', description: 'Biology expert', icon: '🌿', subject: Subject.BIOLOGY }); onComplete(); }} 
+        onSuccess={(level) => { onEarnBadge({ id: 'b', name: 'Bio Explorer', description: 'Biology expert', icon: '🌿', subject: Subject.BIOLOGY }); onComplete(level); }} 
       />
       
       <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-5 rounded-[32px] border border-white shadow-sm">

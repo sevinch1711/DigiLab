@@ -3,16 +3,19 @@ import React, { useState } from 'react';
 import { Badge, Language, Subject, QuestionPool } from '../types';
 import { translations } from '../translations';
 import CatAssessment from '../components/CatAssessment';
+import AIDiagnosticCenter from '../components/AIDiagnosticCenter';
 
 interface ChemistryLabProps {
   experimentId: string | null;
   onSelectExp: (id: string) => void;
-  onComplete: () => void;
+  onComplete: (level: number) => void;
   onEarnBadge: (badge: Badge) => void;
+  // Added onDiagnosticComplete to fix TypeScript error in App.tsx
+  onDiagnosticComplete?: (irt: string) => void;
   lang: Language;
 }
 
-const ChemistryLab: React.FC<ChemistryLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, lang }) => {
+const ChemistryLab: React.FC<ChemistryLabProps> = ({ experimentId, onSelectExp, onComplete, onEarnBadge, onDiagnosticComplete, lang }) => {
   const t = translations[lang];
   const [showAssessment, setShowAssessment] = useState(false);
   const [showTheory, setShowTheory] = useState(false);
@@ -40,6 +43,10 @@ const ChemistryLab: React.FC<ChemistryLabProps> = ({ experimentId, onSelectExp, 
             <p className="text-slate-400 font-bold">Laboratoriya tajribasini tanlang</p>
           </div>
         </div>
+
+        {/* AI Diagnostic Center - Passing the diagnostic callback */}
+        <AIDiagnosticCenter subject={Subject.CHEMISTRY} lang={lang} onDiagnosticComplete={onDiagnosticComplete} />
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {experiments.map(exp => (
             <button key={exp.id} onClick={() => onSelectExp(exp.id)} className="group bg-white p-6 rounded-[40px] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all border-2 border-rose-50 flex flex-col items-center">
@@ -77,7 +84,7 @@ const ChemistryLab: React.FC<ChemistryLabProps> = ({ experimentId, onSelectExp, 
         rewardBadge={{ id: 'b', name: 'Chem Master', description: 'Done', icon: '🧪', subject: Subject.CHEMISTRY }} 
         rewardXP={400} 
         subjectName={experiments.find(e => e.id === experimentId)?.title || "Chemistry"}
-        onSuccess={() => { onEarnBadge({ id: 'b', name: 'Chem Master', description: 'Done', icon: '🧪', subject: Subject.CHEMISTRY }); onComplete(); }} 
+        onSuccess={(level) => { onEarnBadge({ id: 'b', name: 'Chem Master', description: 'Done', icon: '🧪', subject: Subject.CHEMISTRY }); onComplete(level); }} 
       />
       
       <div className="flex justify-between items-center bg-white/70 backdrop-blur-xl p-5 rounded-[32px] border border-white shadow-sm">

@@ -51,7 +51,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ stats, lang }) => {
               </div>
               <div className="text-right">
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Season 1</span>
-                <span className="text-sky-400 font-black">2024-2025</span>
               </div>
             </div>
 
@@ -118,7 +117,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ stats, lang }) => {
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl group-hover:scale-150 transition-transform">🎯</div>
             <h3 className="text-xl font-black mb-4 font-whimsical uppercase tracking-tight">{(t as any).weekly_challenge}</h3>
-            <p className="text-indigo-100 text-sm font-bold leading-relaxed mb-6">Hafta yakuniga qadar 3 ta Fizika laboratoriyasini Level 5 bilan tugating va maxsus 'Flash' nishoniga ega bo'ling!</p>
+            <p className="text-indigo-100 text-sm font-bold leading-relaxed mb-6">Laboratoriyalarni tugating va maxsus 'Flash' nishoniga ega bo'ling!</p>
             <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
                <div className="h-full bg-yellow-400" style={{width: '65%'}}></div>
             </div>
